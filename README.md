@@ -1,2 +1,2 @@
-# BotZeFourth
-I started developping this bot a year ago, after talking with my girlfriend about how you could share characters description as an artist on discord.This was the opportunity to (re) discover SQL database, and discord.py
+# About this project
+I started developping this bot a year ago, after talking with my girlfriend about how you could share characters description as an artist on discord. This was the opportunity to (re) discover SQL database, and discord.py. I put this project on hold due to exam and lack the enthusiasm to continue (I also lost the project). Now I feel more confident tackling this project, espacially thanks to Github and Pycharm. 
