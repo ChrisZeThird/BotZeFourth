@@ -52,7 +52,7 @@ class Admin(commands.Cog):
         if server_id not in roles_dict:
             roles_dict[server_id] = [role for role in roles]
         else:
-            roles_dict[server_id].extend([role for role in roles])
+            roles_dict[server_id].extend([role for role in roles if role not in roles_dict[server_id]])
 
         # Save the data to the JSON file
         with open('roles.json', 'w') as f:
@@ -81,15 +81,19 @@ class Admin(commands.Cog):
 
         # Remove the roles from the list of roles allowed to use the bot
         for role in roles:
+            print(role)
             if role in roles_dict[server_id]:
+                print(roles_dict)
                 roles_dict[server_id].remove(role)
+                print(roles_dict)
 
         # Save the data to the JSON file
         with open('roles.json', 'w') as f:
             json.dump(roles_dict, f)
 
         await ctx.send(
-            f"**Following roles have been removed from the list of roles allowed to use BotZeFourth database system**: {', '.join(f'<@&{role}>' for role in roles)}")
+            f"**Following roles have been removed from the list of roles allowed to use BotZeFourth database system**: "
+            f"{', '.join(f'<@&{role}>' for role in roles)}")
 
 
 async def setup(bot):
