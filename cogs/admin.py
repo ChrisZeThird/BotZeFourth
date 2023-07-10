@@ -1,4 +1,6 @@
 import discord
+import json
+import os
 import sqlite3
 
 from io import BytesIO
@@ -33,6 +35,61 @@ class Admin(commands.Cog):
 
         # Confirm database creation in text channel
         await ctx.send(f"Database for {guild_name} (id: {guild_id}) was successfully created")
+
+    @commands.command()
+    @commands.check(permissions.is_owner)
+    async def addrole(self, ctx: CustomContext, *roles):
+        """ Add roles allowed to use the bot"""
+        # Check if the JSON file exists
+        if not os.path.exists('roles.json'):
+            open('roles.json', 'w').close()
+        # If the file exists, load the data from the file
+        with open('roles.json', 'r') as f:
+            roles_dict = json.load(f)
+
+        # Get the server ID
+        server_id = str(ctx.guild.id)
+        if server_id not in roles_dict:
+            roles_dict[server_id] = [role for role in roles]
+        else:
+            roles_dict[server_id].extend([role for role in roles])
+
+        # Save the data to the JSON file
+        with open('roles.json', 'w') as f:
+            json.dump(roles_dict, f)
+
+        await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: {', '.join(f'<@&{role}>' for role in roles)}")
+
+    @commands.command()
+    @commands.check(permissions.is_owner)
+    async def removerole(self, ctx: CustomContext, *roles):
+        """ Remove roles allowed to use the bot"""
+        # Check if the JSON file exists
+        if not os.path.exists('roles.json'):
+            await ctx.send("No roles have been added yet.")
+            return
+
+        # Load the data from the JSON file
+        with open('roles.json', 'r') as f:
+            roles_dict = json.load(f)
+
+        # Get the server ID
+        server_id = str(ctx.guild.id)
+        if server_id not in roles_dict:
+            await ctx.send("No roles have been added yet.")
+            return
+
+        # Remove the roles from the list of roles allowed to use the bot
+        for role in roles:
+            if role in roles_dict[server_id]:
+                roles_dict[server_id].remove(role)
+
+        # Save the data to the JSON file
+        with open('roles.json', 'w') as f:
+            json.dump(roles_dict, f)
+
+        await ctx.send(
+            f"**Following roles have been removed from the list of roles allowed to use BotZeFourth database system**: {', '.join(f'<@&{role}>' for role in roles)}")
 
 
 async def setup(bot):
