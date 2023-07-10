@@ -7,6 +7,7 @@ from discord.ext import commands
 from utils import permissions
 from utils.data import DiscordBot
 from utils.default import CustomContext
+from utils.misc import extract_role_ids
 
 
 class OCmanager(commands.Cog):
@@ -26,13 +27,14 @@ class OCmanager(commands.Cog):
         """ Add OC to the database with respect to user and guild id """
         # Get guild and user id
         guild_id = str(ctx.guild.id)
-        user_roles = ctx.message.author.roles
-        print(user_roles)
-        # Check if permissions have been set for the server
-        print(self.roles_dict[guild_id])
+        user_roles = extract_role_ids(ctx.message.author.roles)  # roles formatting needed to only keep the actual id
         try:
+            # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
-            if any(role in self.roles_dict[guild_id] for role in user_roles):
+            print(roles_list)
+            print(user_roles)
+            # Check is user is allowed to use the database
+            if any(role in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
 
                 def check(m):
@@ -72,7 +74,7 @@ class OCmanager(commands.Cog):
                 values = (guild_id, user_id, name.content, age.content, nationality.content, gender.content, sexuality.content, universe.content, desc.content, picture, f"0x{colour.content.replace(' #','')}")
 
                 cursor = self.db.cursor()
-                cursor.execute(f'INSERT or IGNORE INTO {guild_id} (?,?,?,?,?,?,?,?,?,?)', values)
+                cursor.execute('INSERT INTO "guild_{}" VALUES(?,?,?,?,?,?,?,?,?,?,?)'.format(guild_id), values)
                 self.db.commit()
 
                 # Close cursor
@@ -82,7 +84,7 @@ class OCmanager(commands.Cog):
                 await ctx.send(f'Character successfully added for <@{user_id}>!')
 
             else:
-                await ctx.send("**If you think you should be able to add a role, contact your local admins.**")
+                await ctx.send("**If you think you should be able to add a character to the database, contact your local admins.**")
 
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before adding an OC.**")

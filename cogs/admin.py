@@ -20,7 +20,7 @@ class Admin(commands.Cog):
         """ Create a database for your server. You can either make it 'private' or 'public'."""
         # Get guild id
         guild_name = ctx.guild.name
-        guild_id = ctx.guild.id
+        guild_id = str(ctx.guild.id)
 
         # Connect to sqlite database
         con = sqlite3.connect("database.db")
