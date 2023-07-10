@@ -12,6 +12,17 @@ def is_owner(ctx: "CustomContext") -> bool:
     return ctx.author.id == ctx.bot.config.discord_owner_id
 
 
+def has_roles(*role_names):
+    async def predicate(ctx):
+        # Get the list of role objects for the user
+        roles = [role.name for role in ctx.author.roles]
+
+        # Check if the user has all the required roles
+        return any(role in roles for role in role_names)
+
+    return commands.check(predicate)
+
+
 async def check_permissions(ctx: "CustomContext", perms, *, check=all) -> bool:
     """ Checks if author has permissions to a permission """
     if ctx.author.id == ctx.bot.config.discord_owner_id:

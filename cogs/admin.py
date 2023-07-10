@@ -27,7 +27,7 @@ class Admin(commands.Cog):
         cur = con.cursor()
 
         # Create database according to guild id
-        cur.execute(f"CREATE TABLE guild_{guild_id} (author_name TEXT, author_id INTEGER, oc_name TEXT, oc_age INT, oc_gender TXT, oc_story TXT, oc_universe TXT)")
+        cur.execute(f"CREATE TABLE guild_{guild_id} (author_name TEXT, author_id INTEGER, oc_name TEXT, oc_age INTEGER, oc_nationality TEXT, oc_gender TEXT, oc_sexuality TEXT, oc_universe TXT, oc_story TEXT, oc_picture, oc_colour)")
         # Commit changes
         con.commit()
         # Close cursor
