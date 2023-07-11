@@ -1,4 +1,6 @@
 discord.py
+# dislash.py
 psutil
 python-dotenv
 discord-py-interactions
+postgreslite
