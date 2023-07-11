@@ -21,18 +21,16 @@ class OCmanager(commands.Cog):
         with open('roles.json', 'r') as f:
             self.roles_dict = json.load(f)
 
-    @commands.command()
+    @commands.hybrid_command(name='addoc', with_app_command=True)
     # @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     async def addoc(self, ctx: CustomContext):
         """ Add OC to the database with respect to user and guild id """
-        # Get guild and user id
+        # Get guild and user roles
         guild_id = str(ctx.guild.id)
         user_roles = extract_role_ids(ctx.message.author.roles)  # roles formatting needed to only keep the actual id
         try:
             # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
-            print(roles_list)
-            print(user_roles)
             # Check is user is allowed to use the database
             if any(role in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
@@ -88,6 +86,41 @@ class OCmanager(commands.Cog):
 
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before adding an OC.**")
+
+    @commands.hybrid_command(name='deleteoc', with_app_command=True)
+    async def deleteoc(self, ctx: CustomContext):
+        """ Delete an oc from the database """
+        # Get guild and user roles
+        guild_id = str(ctx.guild.id)
+        user_roles = extract_role_ids(ctx.message.author.roles)  # roles formatting needed to only keep the actual id
+        try:
+            # Check if permissions have been set for the server
+            roles_list = self.roles_dict[guild_id]
+            # Check is user is allowed to use the database
+            if any(role in roles_list for role in user_roles):
+                user_id = ctx.message.author.id
+
+                def check(m):
+                    return m.author == ctx.author
+
+                await ctx.send("Enter the name of the character to delete: ")
+                oc_name = await self.bot.wait_for('message', check=check, timeout=60)
+                cursor = self.db.cursor()
+                cursor.execute('DELETE FROM "guild_{}" WHERE author_id = {} AND oc_name = "{}"'.format(guild_id, user_id, oc_name))
+                self.db.commit()
+
+                # Close cursor
+                cursor.close()
+                self.db.close()
+
+                await ctx.send(f'Character successfully deleted for <@{user_id}>!')
+
+        except KeyError:
+            await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
+
+    @commands.hybrid_command(name='listoc', with_app_command=True)
+    async def listoc(self, ctx: CustomContext, ):
+        """ List all oc of an artist, by default will list ocs at random if the user is not in the database """
 
 
 async def setup(bot):

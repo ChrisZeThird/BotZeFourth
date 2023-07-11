@@ -3,8 +3,8 @@ import discord
 import psutil
 import os
 
-from utils.default import CustomContext
 from discord.ext import commands
+from utils.default import CustomContext
 from utils import default
 from utils.data import DiscordBot
 
@@ -14,7 +14,7 @@ class Information(commands.Cog):
         self.bot: DiscordBot = bot
         self.process = psutil.Process(os.getpid())
 
-    @commands.command()
+    @commands.hybrid_command(name='ping', with_app_command=True)
     async def ping(self, ctx: CustomContext):
         """ Pong! """
         before = time.monotonic()
@@ -23,7 +23,7 @@ class Information(commands.Cog):
         ping = (time.monotonic() - before) * 1000
         await msg.edit(content=f"🏓 WS: {before_ws}ms  |  REST: {int(ping)}ms")
 
-    @commands.command(aliases=["joinme", "join", "botinvite"])
+    @commands.hybrid_command
     async def invite(self, ctx: CustomContext):
         """ Invite me to your server """
         await ctx.send("\n".join([
@@ -31,7 +31,7 @@ class Information(commands.Cog):
             f"<{discord.utils.oauth_url(self.bot.user.id)}>"
         ]))
 
-    @commands.command(aliases=["supportserver", "feedbackserver"])
+    @commands.hybrid_command(name='botserver', with_app_command=True)
     async def botserver(self, ctx: CustomContext):
         """ Get an invitation to our support server! """
         if isinstance(ctx.channel, discord.DMChannel) or ctx.guild.id != 86484642730885120:

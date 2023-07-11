@@ -3,7 +3,6 @@ import json
 import os
 import sqlite3
 
-from io import BytesIO
 from utils import default, permissions
 from utils.default import CustomContext
 from discord.ext import commands
@@ -14,7 +13,7 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot: DiscordBot = bot
 
-    @commands.command()
+    @commands.hybrid_command(name='createdatabase', with_app_command=True)
     @commands.check(permissions.is_owner)
     async def createdatabase(self, ctx: CustomContext):
         """ Create a database for your server. You can either make it 'private' or 'public'."""
@@ -36,9 +35,9 @@ class Admin(commands.Cog):
         # Confirm database creation in text channel
         await ctx.send(f"Database for {guild_name} (id: {guild_id}) was successfully created")
 
-    @commands.command()
-    @commands.check(permissions.is_owner)
-    async def addrole(self, ctx: CustomContext, *roles):
+    @commands.hybrid_command(name='addrole', with_app_command=True)
+    @commands.has_permissions(manage_roles=True)
+    async def addrole(self, ctx: CustomContext, roles):
         """ Add roles allowed to use the bot"""
         # Check if the JSON file exists
         if not os.path.exists('roles.json'):
@@ -60,9 +59,9 @@ class Admin(commands.Cog):
 
         await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: {', '.join(f'<@&{role}>' for role in roles)}")
 
-    @commands.command()
-    @commands.check(permissions.is_owner)
-    async def removerole(self, ctx: CustomContext, *roles):
+    @commands.hybrid_command(name='removerole', with_app_command=True)
+    @commands.has_permissions(manage_roles=True)
+    async def removerole(self, ctx: CustomContext, roles):
         """ Remove roles allowed to use the bot"""
         # Check if the JSON file exists
         if not os.path.exists('roles.json'):
