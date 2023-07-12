@@ -53,14 +53,15 @@ class Admin(commands.Cog):
 
         if role not in roles_dict[server_id]:
             roles_dict[server_id].append(role)
+
+            # Save the data to the JSON file
+            with open('roles.json', 'w') as f:
+                json.dump(roles_dict, f)
+
             await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: <@&{role}>")
 
         else:
             await ctx.send('**Role already allowed to use BotZeFourth database system.**')
-
-        # Save the data to the JSON file
-        with open('roles.json', 'w') as f:
-            json.dump(roles_dict, f)
 
     @commands.hybrid_command(name='removerole', with_app_command=True)
     @commands.has_permissions(manage_roles=True)
@@ -68,7 +69,7 @@ class Admin(commands.Cog):
         """ Remove roles allowed to use the bot"""
         # Check if the JSON file exists
         if not os.path.exists('roles.json'):
-            await ctx.send("No roles have been added yet.")
+            await ctx.send("File to store authorized roles missing.")
             return
 
         # Load the data from the JSON file
@@ -81,14 +82,6 @@ class Admin(commands.Cog):
             await ctx.send("No roles have been added yet.")
             return
 
-        # Remove the roles from the list of roles allowed to use the bot
-        for role in roles:
-            print(role)
-            if role in roles_dict[server_id]:
-                print(roles_dict)
-                roles_dict[server_id].remove(role)
-                print(roles_dict)
-
         # Save the data to the JSON file
         with open('roles.json', 'w') as f:
             json.dump(roles_dict, f)
@@ -96,6 +89,40 @@ class Admin(commands.Cog):
         await ctx.send(
             f"**Following roles have been removed from the list of roles allowed to use BotZeFourth database system**: "
             f"{', '.join(f'<@&{role}>' for role in roles)}")
+
+    @commands.hybrid_command(name='addchannel', with_app_command=True)
+    @commands.has_permissions(manage_channels=True)
+    async def addchannel(self, ctx: CustomContext, channel_id):
+        # Check if the JSON file exists
+        if not os.path.exists('channels.json'):
+            open('channels.json', 'w').close()
+            return
+
+        # If the file exists, load the data from the file
+        with open('channels.json', 'r') as f:
+            channels_dict = json.load(f)
+
+        # Get the server ID
+        server_id = str(ctx.guild.id)
+        # Get channel object to ensure user input an actual channel
+        channel = self.bot.get_channel(int(channel_id))
+
+        if channel:
+            # Make sure the dictionary is set up before adding a channel
+            if server_id not in channels_dict:
+                channels_dict[server_id] = []
+
+            if channel_id not in channels_dict[server_id]:
+                channels_dict[server_id].append(channel_id)
+
+                # Save the data to the JSON file
+                with open('channels.json', 'w') as f:
+                    json.dump(channels_dict, f)
+
+                await ctx.send(f"Channel {channel.mention} has been added.")
+
+        else:
+            await ctx.send("Invalid channel ID.")
 
 
 async def setup(bot):

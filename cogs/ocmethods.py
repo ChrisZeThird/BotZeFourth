@@ -4,6 +4,7 @@ import discord
 import json
 import os
 
+
 from discord.ext import commands
 from discord.ui import Select, View
 from interactions import autodefer
@@ -12,6 +13,7 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.misc import extract_role_ids
 from utils.picker import ColorPicker
+from typing import Optional
 
 
 class OCmanager(commands.Cog):
@@ -96,7 +98,7 @@ class OCmanager(commands.Cog):
             await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
 
     @commands.hybrid_command(name='listoc', with_app_command=True)
-    async def listoc(self, ctx: CustomContext, ):
+    async def listoc(self, ctx: CustomContext, artist):
         """ List all oc of an artist, by default should list ocs at random if the user is not in the database """
         result = self.bot.pool.execute('SELECT oc_name FROM users WHERE author_id = ?', ctx.author.id)
         rows = result.fetchall()
@@ -115,6 +117,10 @@ class OCmanager(commands.Cog):
             oc_list = [row[0] for row in rows]  # Extract the oc_name values from the rows
             oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
             await ctx.send(f"OCs of artist:\n{oc_list_str}")
+
+    # @commands.hybrid_command(name='ocinfo', with_app_command=True)
+    # async def ocinfo(self, ctx: CustomContext, oc_name):
+    #     """ Gives the information sheet of an OC """
 
 
 async def setup(bot):
