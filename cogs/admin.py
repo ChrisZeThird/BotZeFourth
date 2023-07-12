@@ -37,7 +37,7 @@ class Admin(commands.Cog):
 
     @commands.hybrid_command(name='addrole', with_app_command=True)
     @commands.has_permissions(manage_roles=True)
-    async def addrole(self, ctx: CustomContext, roles):
+    async def addrole(self, ctx: CustomContext, role):
         """ Add roles allowed to use the bot"""
         # Check if the JSON file exists
         if not os.path.exists('roles.json'):
@@ -49,15 +49,15 @@ class Admin(commands.Cog):
         # Get the server ID
         server_id = str(ctx.guild.id)
         if server_id not in roles_dict:
-            roles_dict[server_id] = [role for role in roles]
-        else:
-            roles_dict[server_id].extend([role for role in roles if role not in roles_dict[server_id]])
+            roles_dict[server_id] = []
+
+        roles_dict[server_id].append(role)
 
         # Save the data to the JSON file
         with open('roles.json', 'w') as f:
             json.dump(roles_dict, f)
 
-        await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: {', '.join(f'<@&{role}>' for role in roles)}")
+        await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: <@&{role}>")
 
     @commands.hybrid_command(name='removerole', with_app_command=True)
     @commands.has_permissions(manage_roles=True)

@@ -22,7 +22,7 @@ class Events(commands.Cog):
             helper = str(ctx.invoked_subcommand) if ctx.invoked_subcommand else str(ctx.command)
             await ctx.send_help(helper)
 
-        elif isinstance(err, errors.CommandInvokeError):
+        elif isinstance(err, errors.CommandInvokeError) or isinstance(err, errors.HybridCommandError):
             error = default.traceback_maker(err.original)
 
             if "2000 or fewer" in str(err) and len(ctx.message.clean_content) > 1900:
@@ -65,9 +65,11 @@ class Events(commands.Cog):
         """ The function that activates when boot was completed """
         if not hasattr(self.bot, "uptime"):
             self.bot.uptime = datetime.now()
-            db = PostgresLite('database.db')
-            self.bot.pool = await db.connect_async()
-            await self.bot.tree.sync()
+
+        db = PostgresLite('database.db')
+        self.bot.pool = await db.connect_async()
+
+        await self.bot.tree.sync()
 
         # Check if user desires to have something other than online
         status = self.bot.config.discord_status_type.lower()
