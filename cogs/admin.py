@@ -51,13 +51,16 @@ class Admin(commands.Cog):
         if server_id not in roles_dict:
             roles_dict[server_id] = []
 
-        roles_dict[server_id].append(role)
+        if role not in roles_dict[server_id]:
+            roles_dict[server_id].append(role)
+            await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: <@&{role}>")
+
+        else:
+            await ctx.send('**Role already allowed to use BotZeFourth database system.**')
 
         # Save the data to the JSON file
         with open('roles.json', 'w') as f:
             json.dump(roles_dict, f)
-
-        await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: <@&{role}>")
 
     @commands.hybrid_command(name='removerole', with_app_command=True)
     @commands.has_permissions(manage_roles=True)

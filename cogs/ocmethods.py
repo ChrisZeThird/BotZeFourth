@@ -75,23 +75,46 @@ class OCmanager(commands.Cog):
             # Check is user is allowed to use the database
             if any(role in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
+                result = self.bot.pool.execute('SELECT * FROM users WHERE author_id = ?', user_id)
+                row = result.fetchone()
 
-                def check(m):
-                    return m.author == ctx.author
+                if row is not None:
+                    def check(m):
+                        return m.author == ctx.author
 
-                await ctx.send("Enter the name of the character to delete: ")
-                oc_name = await self.bot.wait_for('message', check=check, timeout=60)
+                    await ctx.send("Enter the name of the character to delete: ")
+                    oc_name = await self.bot.wait_for('message', check=check, timeout=60)
 
-                self.bot.pool.execute('DELETE FROM "guild_{}" WHERE author_id = {} AND oc_name = "{}"'.format(guild_id, user_id, oc_name))
+                    self.bot.pool.execute('DELETE FROM users WHERE author_id = ? AND oc_name = ?', user_id, oc_name)
 
-                await ctx.send(f'Character successfully deleted for <@{user_id}>!')
+                    await ctx.send(f'Character successfully deleted for <@{user_id}>!')
+
+                else:
+                    await ctx.send(f'No character found for {ctx.message.author} (id:{user_id})')
 
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
 
     @commands.hybrid_command(name='listoc', with_app_command=True)
     async def listoc(self, ctx: CustomContext, ):
-        """ List all oc of an artist, by default will list ocs at random if the user is not in the database """
+        """ List all oc of an artist, by default should list ocs at random if the user is not in the database """
+        result = self.bot.pool.execute('SELECT oc_name FROM users WHERE author_id = ?', ctx.author.id)
+        rows = result.fetchall()
+
+        if rows:
+            # User is in the database and has OCs
+            oc_list = [row[0] for row in rows]  # Extract the oc_name values from the rows
+            oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
+            await ctx.send(f"OCs for {ctx.author.name}:\n{oc_list_str}")
+        else:
+            # User is not in the database or does not have OCs
+            await ctx.send("You do not have any OCs. Sending OCs of a random user.")
+            # Retrieve a random author_id from the database
+            result = self.bot.pool.execute('SELECT author_id FROM users ORDER BY RANDOM() LIMIT 1')
+            row = result.fetchone()
+            oc_list = [row[0] for row in rows]  # Extract the oc_name values from the rows
+            oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
+            await ctx.send(f"OCs of artist:\n{oc_list_str}")
 
 
 async def setup(bot):
