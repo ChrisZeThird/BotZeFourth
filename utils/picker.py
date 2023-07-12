@@ -19,15 +19,15 @@ class ColorPicker(discord.ui.View):
     @discord.ui.select(
         placeholder="Select a colour for your oc.",
         options=[
-            discord.SelectOption(label="White", value="White", emoji='⚪'),
-            discord.SelectOption(label="Black", value="Black", emoji='⚫'),
-            discord.SelectOption(label="Purple", value="Purple", emoji='🟣'),
-            discord.SelectOption(label="Blue", value="Blue", emoji='🔵'),
-            discord.SelectOption(label="Green", value="Green", emoji='🟢'),
-            discord.SelectOption(label="Yellow", value="Yellow", emoji='🟡'),
-            discord.SelectOption(label="Orange", value="Orange", emoji='🟠'),
-            discord.SelectOption(label="Red", value="Red", emoji='🔴'),
-            discord.SelectOption(label="Brown", value="Brown", emoji='🟤')
+            discord.SelectOption(label="White", value="white", emoji='⚪'),
+            discord.SelectOption(label="Black", value="black", emoji='⚫'),
+            discord.SelectOption(label="Purple", value="purple", emoji='🟣'),
+            discord.SelectOption(label="Blue", value="blue", emoji='🔵'),
+            discord.SelectOption(label="Green", value="green", emoji='🟢'),
+            discord.SelectOption(label="Yellow", value="yellow", emoji='🟡'),
+            discord.SelectOption(label="Orange", value="orange", emoji='🟠'),
+            discord.SelectOption(label="Red", value="red", emoji='🔴'),
+            discord.SelectOption(label="Brown", value="brown", emoji='🟤')
         ]
     )
     async def select_colour(self, interaction: discord.Interaction, select_item: discord.ui.Select):
