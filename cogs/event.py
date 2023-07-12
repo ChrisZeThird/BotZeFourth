@@ -6,6 +6,7 @@ from datetime import datetime
 from utils.default import CustomContext
 from discord.ext import commands
 from discord.ext.commands import errors
+from postgreslite import PostgresLite
 from utils import default
 from utils.data import DiscordBot
 
@@ -64,6 +65,8 @@ class Events(commands.Cog):
         """ The function that activates when boot was completed """
         if not hasattr(self.bot, "uptime"):
             self.bot.uptime = datetime.now()
+            db = PostgresLite('database.db')
+            self.bot.pool = await db.connect_async()
             await self.bot.tree.sync()
 
         # Check if user desires to have something other than online
