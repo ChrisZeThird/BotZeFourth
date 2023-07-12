@@ -38,7 +38,7 @@ class OCmanager(commands.Cog):
             # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
             # Check is user is allowed to use the database
-            if any(role in roles_list for role in user_roles):
+            if any(str(role) in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
                 user_name = ctx.message.author.name
 
