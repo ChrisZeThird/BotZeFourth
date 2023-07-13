@@ -49,7 +49,7 @@ class Suggestion(commands.Cog):
 
     @commands.hybrid_command(name="suggestionvote", with_app_command=True)
     @commands.cooldown(1, 86400, commands.BucketType.user)
-    async def suggestionvote(self, ctx, suggestion_id: int):
+    async def suggestionvote(self, ctx: CustomContext, suggestion_id: int):
         """ Vote for a suggestion """
         # Increment the votes for the suggestion
         print(await self.bot.pool.execute("UPDATE suggestion SET votes = votes + 1 WHERE id = ?",
@@ -60,18 +60,17 @@ class Suggestion(commands.Cog):
         await ctx.send(f"Your vote has been recorded!")
 
     @commands.hybrid_command(name="suggestionranking")
-    async def suggestionranking(self, ctx):
+    async def suggestionranking(self, ctx: CustomContext):
         """ Check ranking of suggestion """
         # Retrieve the top suggestions
-        top_suggestions = await self.bot.pool.execute(
-            "SELECT id, suggestion, votes FROM suggestion WHERE guild_id = ? ORDER BY votes DESC LIMIT 10",
-            (ctx.guild.id,)).fetchall()
+        top_suggestions = await self.bot.pool.fetch(
+            "SELECT id, suggestion, votes FROM suggestion ORDER BY votes DESC")
 
         # Format the suggestions as a string
-        suggestions_str = "\n".join([f"{s[0]}: {s[1]} (Votes: {s[2]})" for s in top_suggestions])
+        suggestions_str = "\n".join([f"{s['id']}: {s['suggestion']} (Votes: {s['votes']})" for s in top_suggestions])
 
         # Send the top suggestions
-        await ctx.send(f"Top suggestions:\n{suggestions_str}")
+        await ctx.send(f"# Top suggestions:\n```{suggestions_str}```")
 
 
 async def setup(bot):
