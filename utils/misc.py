@@ -1,6 +1,14 @@
 import re
 
 
+def ordinal_suffix(n):
+    if 10 <= n % 100 <= 20:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return str(n) + suffix
+
+
 def extract_role_ids(roles):
     role_ids = []
     for role in roles:

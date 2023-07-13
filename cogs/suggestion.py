@@ -3,6 +3,7 @@ import humanize
 
 from utils import permissions, default
 from utils.config import Config
+from utils.misc import ordinal_suffix
 from discord.ext import commands
 
 from utils.default import CustomContext
@@ -67,10 +68,10 @@ class Suggestion(commands.Cog):
             "SELECT id, suggestion, votes FROM suggestion ORDER BY votes DESC")
 
         # Format the suggestions as a string
-        suggestions_str = "\n".join([f"{s['id']}: {s['suggestion']} (Votes: {s['votes']})" for s in top_suggestions])
+        suggestions_str = "\n".join([f"** {ordinal_suffix(i+1)}**: {s['suggestion']} *(ID: {s['id']} | Votes: {s['votes']})*" for s, i in zip(top_suggestions, range(len(top_suggestions)))])
 
         # Send the top suggestions
-        await ctx.send(f"# Top suggestions:\n```{suggestions_str}```")
+        await ctx.send(f"# :bookmark_tabs:  Top suggestions:\n{suggestions_str}")
 
 
 async def setup(bot):
