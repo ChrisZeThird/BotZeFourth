@@ -1,7 +1,7 @@
 aiosqlite
 discord.py
-# dislash.py
+humanize
 psutil
 python-dotenv
 discord-py-interactions
-postgreslite
+postgreslite==0.1.3
