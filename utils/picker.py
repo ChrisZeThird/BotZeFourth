@@ -12,6 +12,18 @@ import discord
 #     {'label': 'Yellow', 'value': 'Yellow', 'emoji': '🟡'}
 # ]
 
+colors = {
+        "red": "#FF0000",
+        "blue": "#0000FF",
+        "green": "#00FF00",
+        "yellow": "#FFFF00",
+        "orange": "#FFA500",
+        "brown": "#A52A2A",
+        "white": "#FFFFFF",
+        "black": "#000000",
+        "purple": "#800080"
+    }
+
 
 class ColorPicker(discord.ui.View):
     colour = None
@@ -19,15 +31,15 @@ class ColorPicker(discord.ui.View):
     @discord.ui.select(
         placeholder="Select a colour for your oc.",
         options=[
-            discord.SelectOption(label="White", value="white", emoji='⚪'),
-            discord.SelectOption(label="Black", value="black", emoji='⚫'),
-            discord.SelectOption(label="Purple", value="purple", emoji='🟣'),
-            discord.SelectOption(label="Blue", value="blue", emoji='🔵'),
-            discord.SelectOption(label="Green", value="green", emoji='🟢'),
-            discord.SelectOption(label="Yellow", value="yellow", emoji='🟡'),
-            discord.SelectOption(label="Orange", value="orange", emoji='🟠'),
-            discord.SelectOption(label="Red", value="red", emoji='🔴'),
-            discord.SelectOption(label="Brown", value="brown", emoji='🟤')
+            discord.SelectOption(label="White", value=colors["white"], emoji='⚪'),
+            discord.SelectOption(label="Black", value=colors["black"], emoji='⚫'),
+            discord.SelectOption(label="Purple", value=colors["purple"], emoji='🟣'),
+            discord.SelectOption(label="Blue", value=colors["blue"], emoji='🔵'),
+            discord.SelectOption(label="Green", value=colors["green"], emoji='🟢'),
+            discord.SelectOption(label="Yellow", value=colors["yellow"], emoji='🟡'),
+            discord.SelectOption(label="Orange", value=colors["orange"], emoji='🟠'),
+            discord.SelectOption(label="Red", value=colors["red"], emoji='🔴'),
+            discord.SelectOption(label="Brown", value=colors["brown"], emoji='🟤')
         ]
     )
     async def select_colour(self, interaction: discord.Interaction, select_item: discord.ui.Select):

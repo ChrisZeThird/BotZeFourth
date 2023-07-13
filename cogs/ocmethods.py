@@ -11,6 +11,7 @@ from interactions import autodefer
 from postgreslite import PostgresLite
 from utils.data import DiscordBot
 from utils.default import CustomContext
+from utils.embed import init_embed
 from utils.misc import extract_role_ids
 from utils.picker import ColorPicker
 from typing import Optional
@@ -34,9 +35,11 @@ class OCmanager(commands.Cog):
         # Get guild and user roles
         guild_id = str(ctx.guild.id)
         user_roles = extract_role_ids(ctx.message.author.roles)  # roles formatting needed to only keep the actual id
+        # print(user_roles)
         try:
             # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
+            # print(roles_list)
             # Check is user is allowed to use the database
             if any(str(role) in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
@@ -98,29 +101,62 @@ class OCmanager(commands.Cog):
             await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
 
     @commands.hybrid_command(name='listoc', with_app_command=True)
-    async def listoc(self, ctx: CustomContext, artist):
-        """ List all oc of an artist, by default should list ocs at random if the user is not in the database """
-        result = self.bot.pool.execute('SELECT oc_name FROM users WHERE author_id = ?', ctx.author.id)
-        rows = result.fetchall()
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def listoc(self, ctx: CustomContext, artist_name):
+        """ List all oc of an artist """
+        rows = await self.bot.pool.fetch('SELECT oc_name FROM users WHERE user_name = ?', artist_name)
 
         if rows:
             # User is in the database and has OCs
-            oc_list = [row[0] for row in rows]  # Extract the oc_name values from the rows
+            oc_list = [row['oc_name'] for row in rows]  # Extract the oc_name values from the rows
             oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
-            await ctx.send(f"OCs for {ctx.author.name}:\n{oc_list_str}")
+            await ctx.send(f"# :clipboard: OCs for {artist_name}:\n**{oc_list_str}**")
         else:
             # User is not in the database or does not have OCs
-            await ctx.send("You do not have any OCs. Sending OCs of a random user.")
-            # Retrieve a random author_id from the database
-            result = self.bot.pool.execute('SELECT author_id FROM users ORDER BY RANDOM() LIMIT 1')
-            row = result.fetchone()
-            oc_list = [row[0] for row in rows]  # Extract the oc_name values from the rows
-            oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
-            await ctx.send(f"OCs of artist:\n{oc_list_str}")
+            await ctx.send(f"{artist_name} do not have any OCs!")
 
-    # @commands.hybrid_command(name='ocinfo', with_app_command=True)
-    # async def ocinfo(self, ctx: CustomContext, oc_name):
-    #     """ Gives the information sheet of an OC """
+    @commands.hybrid_command(name='randomoc', with_app_command=True)
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def randomoc(self, ctx: CustomContext):
+        """ Send the description of a random selected OC """
+        # Get sqlite row
+        rows = await self.bot.pool.fetch('SELECT * FROM users WHERE guild_id = ? ORDER BY RANDOM() LIMIT 1', ctx.guild.id)
+
+        # Store all information
+        user_id = rows[0]['user_id']
+        user_name = rows[0]['user_name']
+        oc_age = rows[0]['oc_name']
+        oc_nationality = rows[0]['oc_nationality']
+        oc_gender = rows[0]['oc_gender']
+        oc_sexuality = rows[0]['oc_sexuality']
+        oc_universe = rows[0]['oc_universe']
+        oc_story = rows[0]['oc_story']
+        oc_picture = rows[0]['oc_picture']
+        oc_color = rows[0]['oc_colour']
+
+        user = ctx.bot.get_user(user_id)
+        avatar_url = user.avatar
+
+        # Create embed
+        embed = init_embed()
+        embed.description = oc_story
+        embed.colour = oc_color
+
+        embed.set_field_at(0, name="Age", value=oc_age)
+        embed.set_field_at(1, name="Nationality", value=oc_nationality)
+        embed.set_field_at(2, name="Gender", value=oc_gender)
+        embed.set_field_at(3, name="Sexuality", value=oc_sexuality)
+
+        embed.set_thumbnail(url=avatar_url)  # Artist avatar
+        embed.set_image(url=oc_picture)  # OC illustration
+        embed.set_footer(text=f"Author: {user_name}")  # Artist name at the bottom
+
+        await ctx.send(embed=embed)
+
+    @commands.hybrid_command(name='ocinfo', with_app_command=True)
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def ocinfo(self, ctx: CustomContext, oc_name):
+        """ Gives the information sheet of an OC """
 
 
 async def setup(bot):
