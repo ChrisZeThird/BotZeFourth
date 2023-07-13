@@ -50,6 +50,7 @@ class Suggestion(commands.Cog):
     @commands.hybrid_command(name="suggestionvote", with_app_command=True)
     @commands.cooldown(1, 86400, commands.BucketType.user)
     async def suggestionvote(self, ctx, suggestion_id: int):
+        """ Vote for a suggestion """
         # Increment the votes for the suggestion
         print(await self.bot.pool.execute("UPDATE suggestion SET votes = votes + 1 WHERE id = ?",
                    suggestion_id)
@@ -60,6 +61,7 @@ class Suggestion(commands.Cog):
 
     @commands.hybrid_command(name="suggestionranking")
     async def suggestionranking(self, ctx):
+        """ Check ranking of suggestion """
         # Retrieve the top suggestions
         top_suggestions = await self.bot.pool.execute(
             "SELECT id, suggestion, votes FROM suggestion WHERE guild_id = ? ORDER BY votes DESC LIMIT 10",
