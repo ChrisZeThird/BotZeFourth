@@ -16,6 +16,10 @@ def init_embed():
                     value="",
                     inline=True)
 
+    embed.add_field(name="Universe",
+                    value="",
+                    inline=True)
+
     embed.add_field(name="Gender",
                     value="",
                     inline=True)

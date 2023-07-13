@@ -132,7 +132,7 @@ class OCmanager(commands.Cog):
         oc_universe = rows[0]['oc_universe']
         oc_story = rows[0]['oc_story']
         oc_picture = rows[0]['oc_picture']
-        oc_color = rows[0]['oc_colour']
+        oc_color = int(rows[0]['oc_colour'][1:], 16)
 
         user = ctx.bot.get_user(user_id)
         avatar_url = user.avatar
@@ -144,8 +144,9 @@ class OCmanager(commands.Cog):
 
         embed.set_field_at(0, name="Age", value=oc_age)
         embed.set_field_at(1, name="Nationality", value=oc_nationality)
-        embed.set_field_at(2, name="Gender", value=oc_gender)
-        embed.set_field_at(3, name="Sexuality", value=oc_sexuality)
+        embed.set_field_at(2, name="Universe", value=oc_universe)
+        embed.set_field_at(3, name="Gender", value=oc_gender)
+        embed.set_field_at(4, name="Sexuality", value=oc_sexuality)
 
         embed.set_thumbnail(url=avatar_url)  # Artist avatar
         embed.set_image(url=oc_picture)  # OC illustration
@@ -155,8 +156,43 @@ class OCmanager(commands.Cog):
 
     @commands.hybrid_command(name='ocinfo', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
-    async def ocinfo(self, ctx: CustomContext, oc_name):
+    async def ocinfo(self, ctx: CustomContext, artist_name, oc_name):
         """ Gives the information sheet of an OC """
+        # Get sqlite row
+        rows = await self.bot.pool.fetch('SELECT * FROM users WHERE guild_id = ? AND user_name = ? AND oc_name = ?',
+                                         ctx.guild.id, artist_name, oc_name)
+
+        # Store all information
+        user_id = rows[0]['user_id']
+        user_name = rows[0]['user_name']
+        oc_age = rows[0]['oc_name']
+        oc_nationality = rows[0]['oc_nationality']
+        oc_gender = rows[0]['oc_gender']
+        oc_sexuality = rows[0]['oc_sexuality']
+        oc_universe = rows[0]['oc_universe']
+        oc_story = rows[0]['oc_story']
+        oc_picture = rows[0]['oc_picture']
+        oc_color = int(rows[0]['oc_colour'][1:], 16)
+
+        user = ctx.bot.get_user(user_id)
+        avatar_url = user.avatar
+
+        # Create embed
+        embed = init_embed()
+        embed.description = oc_story
+        embed.colour = oc_color
+
+        embed.set_field_at(0, name="Age", value=oc_age)
+        embed.set_field_at(1, name="Nationality", value=oc_nationality)
+        embed.set_field_at(2, name="Universe", value=oc_universe)
+        embed.set_field_at(3, name="Gender", value=oc_gender)
+        embed.set_field_at(4, name="Sexuality", value=oc_sexuality)
+
+        embed.set_thumbnail(url=avatar_url)  # Artist avatar
+        embed.set_image(url=oc_picture)  # OC illustration
+        embed.set_footer(text=f"Author: {user_name}")  # Artist name at the bottom
+
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):
