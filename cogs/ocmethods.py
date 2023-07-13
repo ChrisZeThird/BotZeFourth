@@ -45,12 +45,11 @@ class OCmanager(commands.Cog):
                 user_id = ctx.message.author.id
                 user_name = ctx.message.author.name
 
-                view = ColorPicker()
+                view = ColorPicker(bot=self.bot)
                 await ctx.send(view=view)
                 await view.wait()
 
                 colour = view.colour[0]
-
                 await ctx.send(f'You have picked {colour} for your OC!')
 
                 print(await self.bot.pool.execute("""
@@ -114,6 +113,21 @@ class OCmanager(commands.Cog):
         else:
             # User is not in the database or does not have OCs
             await ctx.send(f"{artist_name} do not have any OCs!")
+
+    @commands.hybrid_command(name='listartist', with_app_command=True)
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def listartist(self, ctx: CustomContext):
+        """ List all artists of a server """
+        rows = await self.bot.pool.fetch('SELECT user_name FROM users WHERE guild_id = ?', ctx.guild.id)
+
+        if rows:
+            # User is in the database and has OCs
+            artist_list = [row['user_name'] for row in rows]  # Extract the oc_name values from the rows
+            artist_list_str = "\n".join(artist_list)  # Join the oc_list elements with newlines
+            await ctx.send(f"# :clipboard: Artist with OCs:\n**{artist_list_str}**")
+        else:
+            # User is not in the database or does not have OCs
+            await ctx.send(f"No artist has been found!")
 
     @commands.hybrid_command(name='randomoc', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)

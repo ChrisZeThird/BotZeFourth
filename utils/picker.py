@@ -1,3 +1,4 @@
+import asyncio
 import discord
 
 # colour_options = [
@@ -28,6 +29,10 @@ colors = {
 class ColorPicker(discord.ui.View):
     colour = None
 
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bot = bot
+
     @discord.ui.select(
         placeholder="Select a colour for your oc.",
         options=[
@@ -39,11 +44,27 @@ class ColorPicker(discord.ui.View):
             discord.SelectOption(label="Yellow", value=colors["yellow"], emoji='🟡'),
             discord.SelectOption(label="Orange", value=colors["orange"], emoji='🟠'),
             discord.SelectOption(label="Red", value=colors["red"], emoji='🔴'),
-            discord.SelectOption(label="Brown", value=colors["brown"], emoji='🟤')
+            discord.SelectOption(label="Brown", value=colors["brown"], emoji='🟤'),
+            discord.SelectOption(label="Custom", value="custom", emoji='🎨')
         ]
     )
     async def select_colour(self, interaction: discord.Interaction, select_item: discord.ui.Select):
-        self.colour = select_item.values
+        if select_item.values[0] == "custom":
+            # Prompt the user to input a hex code
+            await interaction.response.send_message("Please input a hex code for your custom color.")
+            try:
+                # Wait for the user's response
+                response = await self.bot.wait_for("message", check=lambda m: m.author == interaction.user,
+                                                   timeout=30.0)
+                # Set the color to the user's input
+                self.colour = response.content
+            except asyncio.TimeoutError:
+                # Handle timeout
+                await interaction.response.send_message("Timed out. Please try again.")
+                return
+        else:
+            # Set the color to the selected option
+            self.colour = select_item.values[0]
         self.children[0].disabled = True
         await interaction.message.edit(view=self)
         await interaction.response.defer()
