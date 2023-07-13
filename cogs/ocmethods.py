@@ -13,7 +13,7 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
-from utils.picker import ColorPicker
+from utils.picker import ColorPicker, OCModifier
 from typing import Optional
 
 
@@ -49,7 +49,7 @@ class OCmanager(commands.Cog):
                 await ctx.send(view=view)
                 await view.wait()
 
-                colour = view.colour[0]
+                colour = view.colour
                 await ctx.send(f'You have picked {colour} for your OC!')
 
                 print(await self.bot.pool.execute("""
@@ -76,26 +76,80 @@ class OCmanager(commands.Cog):
         try:
             # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
-            # Check is user is allowed to use the database
+            # Check if user is allowed to use the database
             if any(role in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
-                result = self.bot.pool.execute('SELECT * FROM users WHERE author_id = ?', user_id)
-                row = result.fetchone()
+                result = await self.bot.pool.fetch('SELECT * FROM users WHERE user_id = ?', user_id)
 
-                if row is not None:
+                if result is not None:
                     def check(m):
                         return m.author == ctx.author
 
+                    # User is in the database and has OCs
+                    oc_list = [row['oc_name'] for row in result]  # Extract the oc_name values from the rows
+                    oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
+                    await ctx.send(f"# :clipboard: List of your OCs:\n**{oc_list_str}**")
+
+                    # Ask user which OC to delete
                     await ctx.send("Enter the name of the character to delete: ")
                     oc_name = await self.bot.wait_for('message', check=check, timeout=60)
+                    # Get the content of the message
+                    oc_name_content = oc_name.content
 
-                    self.bot.pool.execute('DELETE FROM users WHERE author_id = ? AND oc_name = ?', user_id, oc_name)
-
-                    await ctx.send(f'Character successfully deleted for <@{user_id}>!')
+                    if oc_name_content in oc_list:
+                        await self.bot.pool.execute('DELETE FROM users WHERE user_id = ? AND oc_name = ?', user_id,
+                                                    oc_name_content)
+                        await ctx.send(f'Character {oc_name_content} successfully deleted for <@{user_id}>!')
+                    else:
+                        await ctx.send(f'Invalid OC name. Please enter a valid name from the list.')
 
                 else:
                     await ctx.send(f'No character found for {ctx.message.author} (id:{user_id})')
 
+        except KeyError:
+            await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
+
+    @commands.hybrid_command(name='modifyoc', with_app_command=True)
+    async def modifyoc(self, ctx, oc_name: str):
+        """ Modify OC in the database with respect to user and guild id """
+        # Get guild and user roles
+        guild_id = str(ctx.guild.id)
+        user_roles = extract_role_ids(ctx.message.author.roles)
+
+        try:
+            # Check if permissions have been set for the server
+            roles_list = self.roles_dict[guild_id]
+
+            # Check if user is allowed to use the database
+            if any(str(role) in roles_list for role in user_roles):
+                # Get the OC from the database
+                oc = await self.bot.pool.fetch("""
+                        SELECT * FROM users WHERE user_id = ? AND guild_id = ? AND oc_name = ?
+                    """, ctx.message.author.id, guild_id, oc_name)
+                # Check if the OC exists
+                if not oc:
+                    await ctx.send(f"No OC found with the name {oc_name}.")
+                    return
+
+                # Create an instance of the OCModifier view
+                oc_modifier = OCModifier(self.bot)
+
+                # Wait for the user to make their selections
+                await ctx.send("Select fields to modify:", view=oc_modifier)
+                await oc_modifier.wait()
+
+                # Get the modified fields and update the OC in the database
+                new_values = oc_modifier.modified_fields
+                set_clause = ', '.join([f'{field} = ?' for field in new_values.keys()])
+                values = list(new_values.values()) + [ctx.message.author.id, guild_id, oc_name]
+                await self.bot.pool.execute(f"""UPDATE users SET {set_clause} WHERE user_id = ? AND guild_id = ? AND oc_name = ?
+                    """, *values)
+
+                await ctx.send(f'OC called {oc_name} successfully modified!')
+
+            else:
+                await ctx.send(
+                    "**If you think you should be able to modify an OC in the database, contact your local admins.**")
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
 
@@ -175,7 +229,7 @@ class OCmanager(commands.Cog):
         # Get sqlite row
         rows = await self.bot.pool.fetch('SELECT * FROM users WHERE guild_id = ? AND user_name = ? AND oc_name = ?',
                                          ctx.guild.id, artist_name, oc_name)
-
+        print(rows)
         # Store all information
         user_id = rows[0]['user_id']
         user_name = rows[0]['user_name']
