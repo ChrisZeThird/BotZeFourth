@@ -86,7 +86,7 @@ The bot will then send an embed with all the information set by the original art
 
 ![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/fc9d39f1-edbb-47b6-ba15-fae8ff5c416a)
 
-You can also get the list of OC(s) owned by an artist with `/oclist` or check who have oc on your server using `/artistlist`.
+You can also get the list of OC(s) owned by an artist with `/oclist` or check who has OC(s) on your server using `/artistlist`.
 
 # Acknowledgements
 
