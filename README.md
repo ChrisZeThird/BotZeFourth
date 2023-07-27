@@ -8,16 +8,19 @@ Artists can create information cards about their characters, and users on discor
 card. For now, there are basic functionalities. I'm actively looking for feedbacks!
 
 # Quick set-up
-Start by inviting the bot to your server using this 
+Start by inviting the bot to your server using this
 [link](https://discord.com/api/oauth2/authorize?client_id=848583084119031808&permissions=397553036369&scope=bot).
 
 You will first have to give the bot roles that can use the database system. Otherwise, you won't be able to use any
 command related to OC management. You'll need the `/addrole roleid` command:
+
 ![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/ac244c11-726a-464c-a955-556f44200fd8)
 
 Then give the bot channel where 
 artworks are being posted using `/addchannel` command:
+
 ![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/b0cf44f4-c29e-4d42-9f31-73cef7e3b6a7)
+
 This way, you can allow artists to post their creation and immediately create a thread to 
 enable interactions between the author and viewers without cluttering the main channel (any message without an 
 attachment will be deleted). This command is not mandatory.
