@@ -79,17 +79,18 @@ class OCmanager(commands.Cog):
             # Check is user is allowed to use the database
             if any(role in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
-                result = self.bot.pool.execute('SELECT * FROM users WHERE author_id = ?', user_id)
-                row = result.fetchone()
+                result = await self.bot.pool.fetch('SELECT * FROM users WHERE user_id = ?', user_id)
 
-                if row is not None:
+                if result is not None:
                     def check(m):
                         return m.author == ctx.author
 
                     await ctx.send("Enter the name of the character to delete: ")
                     oc_name = await self.bot.wait_for('message', check=check, timeout=60)
-
-                    self.bot.pool.execute('DELETE FROM users WHERE author_id = ? AND oc_name = ?', user_id, oc_name)
+                    print(oc_name)
+                    print(type(oc_name))
+                    print(user_id)
+                    await self.bot.pool.execute('DELETE FROM users WHERE user_id = ? AND oc_name = ?', user_id, oc_name.content)
 
                     await ctx.send(f'Character successfully deleted for <@{user_id}>!')
 
