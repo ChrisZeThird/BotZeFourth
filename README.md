@@ -12,7 +12,7 @@ Start by inviting the bot to your server using this
 [link](https://discord.com/api/oauth2/authorize?client_id=848583084119031808&permissions=397553036369&scope=bot).
 
 You will first have to give the bot roles that can use the database system. Otherwise, you won't be able to use any
-command related to OC management. You'll need the `/addrole roleid` command:
+command related to OC management. You'll need the `/addrole` command:
 
 ![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/ac244c11-726a-464c-a955-556f44200fd8)
 
