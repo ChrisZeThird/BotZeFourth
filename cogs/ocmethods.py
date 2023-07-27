@@ -1,20 +1,14 @@
-import aiosqlite
 import asyncio
 import discord
 import json
 import os
 
-
 from discord.ext import commands
-from discord.ui import Select, View
-from interactions import autodefer
-from postgreslite import PostgresLite
 from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
 from utils.picker import ColorPicker
-from typing import Optional
 
 
 class OCmanager(commands.Cog):
@@ -27,9 +21,9 @@ class OCmanager(commands.Cog):
         with open('roles.json', 'r') as f:
             self.roles_dict = json.load(f)
 
-    @commands.hybrid_command(name='addoc', with_app_command=True)
+    @commands.hybrid_command(name='ocadd', with_app_command=True)
     # @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
-    async def addoc(self, ctx, name, age, nationality, gender, sexuality, universe, desc, picture: discord.Attachment):
+    async def ocadd(self, ctx, name, age, nationality, gender, sexuality, universe, desc, picture: discord.Attachment):
         """ Add OC to the database with respect to user and guild id """
         # await ctx.defer()  # defer response, now we have 15 minutes to reply
         # Get guild and user roles
@@ -67,8 +61,8 @@ class OCmanager(commands.Cog):
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before adding an OC.**")
 
-    @commands.hybrid_command(name='deleteoc', with_app_command=True)
-    async def deleteoc(self, ctx: CustomContext):
+    @commands.hybrid_command(name='ocdelete', with_app_command=True)
+    async def ocdelete(self, ctx: CustomContext):
         """ Delete an oc from the database """
         # Get guild and user roles
         guild_id = str(ctx.guild.id)
@@ -85,14 +79,21 @@ class OCmanager(commands.Cog):
                     def check(m):
                         return m.author == ctx.author
 
-                    await ctx.send("Enter the name of the character to delete: ")
-                    oc_name = await self.bot.wait_for('message', check=check, timeout=60)
-                    print(oc_name)
-                    print(type(oc_name))
-                    print(user_id)
-                    await self.bot.pool.execute('DELETE FROM users WHERE user_id = ? AND oc_name = ?', user_id, oc_name.content)
+                    # List the OC(s)
+                    oc_list = [row['oc_name'] for row in result]  # Extract the oc_name values from the rows
+                    oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
 
-                    await ctx.send(f'Character successfully deleted for <@{user_id}>!')
+                    # Ask what OC name to delete
+                    await ctx.send(f"# :broom: Enter the name of the character to delete from the following list:\n**{oc_list_str}**")
+                    try:
+                        oc_name = await self.bot.wait_for('message', check=check, timeout=15)
+                        await self.bot.pool.execute('DELETE FROM users WHERE user_id = ? AND oc_name = ?', user_id,
+                                                    oc_name.content)
+
+                        await ctx.send(f'Character successfully deleted for <@{user_id}>!')
+
+                    except asyncio.TimeoutError:
+                        await ctx.send("You took too long. No OC was deleted.")
 
                 else:
                     await ctx.send(f'No character found for {ctx.message.author} (id:{user_id})')
@@ -100,9 +101,9 @@ class OCmanager(commands.Cog):
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
 
-    @commands.hybrid_command(name='listoc', with_app_command=True)
+    @commands.hybrid_command(name='oclist', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
-    async def listoc(self, ctx: CustomContext, artist_name):
+    async def oclist(self, ctx: CustomContext, artist_name):
         """ List all oc of an artist """
         rows = await self.bot.pool.fetch('SELECT oc_name FROM users WHERE user_name = ?', artist_name)
 
@@ -115,9 +116,9 @@ class OCmanager(commands.Cog):
             # User is not in the database or does not have OCs
             await ctx.send(f"{artist_name} do not have any OCs!")
 
-    @commands.hybrid_command(name='listartist', with_app_command=True)
+    @commands.hybrid_command(name='artistlist', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
-    async def listartist(self, ctx: CustomContext):
+    async def artistlist(self, ctx: CustomContext):
         """ List all artists of a server """
         rows = await self.bot.pool.fetch('SELECT user_name FROM users WHERE guild_id = ?', ctx.guild.id)
 
@@ -130,9 +131,9 @@ class OCmanager(commands.Cog):
             # User is not in the database or does not have OCs
             await ctx.send(f"No artist has been found!")
 
-    @commands.hybrid_command(name='randomoc', with_app_command=True)
+    @commands.hybrid_command(name='ocrandom', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
-    async def randomoc(self, ctx: CustomContext):
+    async def ocrandom(self, ctx: CustomContext):
         """ Send the description of a random selected OC """
         # Get sqlite row
         rows = await self.bot.pool.fetch('SELECT * FROM users WHERE guild_id = ? ORDER BY RANDOM() LIMIT 1', ctx.guild.id)
