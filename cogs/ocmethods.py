@@ -8,7 +8,7 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
-from utils.picker import ColorPicker
+from utils.picker import ColorPicker, OCModifier
 
 
 class OCmanager(commands.Cog):
@@ -98,6 +98,50 @@ class OCmanager(commands.Cog):
                 else:
                     await ctx.send(f'No character found for {ctx.message.author} (id:{user_id})')
 
+        except KeyError:
+            await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
+
+    @commands.hybrid_command(name='ocmodify', with_app_command=True)
+    async def ocmodify(self, ctx, oc_name: str):
+        """ Modify OC in the database with respect to user and guild id """
+        # Get guild and user roles
+        guild_id = str(ctx.guild.id)
+        user_roles = extract_role_ids(ctx.message.author.roles)
+
+        try:
+            # Check if permissions have been set for the server
+            roles_list = self.roles_dict[guild_id]
+
+            # Check if user is allowed to use the database
+            if any(str(role) in roles_list for role in user_roles):
+                # Get the OC from the database
+                oc = await self.bot.pool.fetch("""
+                            SELECT * FROM users WHERE user_id = ? AND guild_id = ? AND oc_name = ?
+                        """, ctx.message.author.id, guild_id, oc_name)
+                # Check if the OC exists
+                if not oc:
+                    await ctx.send(f"No OC found with the name {oc_name}.")
+                    return
+
+                # Create an instance of the OCModifier view
+                oc_modifier = OCModifier(self.bot)
+
+                # Wait for the user to make their selections
+                await ctx.send("Select fields to modify:", view=oc_modifier)
+                await oc_modifier.wait()
+
+                # Get the modified fields and update the OC in the database
+                new_values = oc_modifier.modified_fields
+                set_clause = ', '.join([f'{field} = ?' for field in new_values.keys()])
+                values = list(new_values.values()) + [ctx.message.author.id, guild_id, oc_name]
+                await self.bot.pool.execute(f"""UPDATE users SET {set_clause} WHERE user_id = ? AND guild_id = ? AND oc_name = ?
+                        """, *values)
+
+                await ctx.send(f'OC called {oc_name} successfully modified!')
+
+            else:
+                await ctx.send(
+                    "**If you think you should be able to modify an OC in the database, contact your local admins.**")
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before deleting an OC.**")
 

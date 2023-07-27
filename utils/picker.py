@@ -1,18 +1,6 @@
 import asyncio
 import discord
 
-# colour_options = [
-#     {'label': 'White', 'value': 'White', 'emoji': '⚪'},
-#     {'label': 'Black', 'value': 'Black', 'emoji': '⚫'},
-#     {'label': 'Blue', 'value': 'Blue', 'emoji': '🔵'},
-#     {'label': 'Brown', 'value': 'Brown', 'emoji': '🟤'},
-#     {'label': 'Green', 'value': 'Green', 'emoji': '🟢'},
-#     {'label': 'Orange', 'value': 'Orange', 'emoji': '🟠'},
-#     {'label': 'Purple', 'value': 'Purple', 'emoji': '🟣'},
-#     {'label': 'Red', 'value': 'Red', 'emoji': '🔴'},
-#     {'label': 'Yellow', 'value': 'Yellow', 'emoji': '🟡'}
-# ]
-
 colors = {
         "red": "#FF0000",
         "blue": "#0000FF",
@@ -71,17 +59,37 @@ class ColorPicker(discord.ui.View):
         await interaction.response.defer()
         self.stop()
 
-# await ctx.send("Enter the characteristic colour of the character (as hex code: https://www.color-hex.com): ")
-# colour = await self.bot.wait_for('message', check=check, timeout=60)
 
-# select = Select(max_values=1, placeholder='Select a colour!', options=options)
+class OCModifier(discord.ui.View):
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bot = bot
+        self.modified_fields = {}
 
-# async def my_callback(interaction: discord.Interaction):
-#     await interaction.response.send_message(f'You chose: {select.values[0]}')
-#     global colour
-#     colour = select.values[0]
-#
-# select.callback = my_callback
-# view = View()
-# view.add_item(select)
-# await ctx.send('Select a colour!', view=view)
+    @discord.ui.select(
+        placeholder="Select a field to modify for your OC.",
+        options=[
+            discord.SelectOption(label="OC Name", value="oc_name"),
+            discord.SelectOption(label="OC Age", value="oc_age"),
+            discord.SelectOption(label="OC Nationality", value="oc_nationality"),
+            discord.SelectOption(label="OC Gender", value="oc_gender"),
+            discord.SelectOption(label="OC Sexuality", value="oc_sexuality"),
+            discord.SelectOption(label="OC Universe", value="oc_universe"),
+            discord.SelectOption(label="OC Story", value="oc_story"),
+            discord.SelectOption(label="OC Picture", value="oc_picture"),
+            discord.SelectOption(label="OC Colour", value="oc_colour")
+        ]
+    )
+    async def select_field(self, interaction: discord.Interaction, select_item: discord.ui.Select):
+        field = select_item.values[0]
+        await interaction.response.send_message(f"Please input a new value for {field}.")
+        try:
+            response = await self.bot.wait_for("message", check=lambda m: m.author == interaction.user, timeout=30.0)
+            self.modified_fields[field] = response.content
+        except asyncio.TimeoutError:
+            await interaction.response.send_message("Timed out. Please try again.")
+            return
+
+        self.children[0].disabled = True
+        await interaction.message.edit(view=self)
+        self.stop()
