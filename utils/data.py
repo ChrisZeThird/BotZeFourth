@@ -44,6 +44,7 @@ class HelpFormat(DefaultHelpCommand):
         destination = self.get_destination(no_pm=True)
         await destination.send(error)
 
+    # @commands.hybrid_command(name='send_command_help', with_app_command=True)
     async def send_command_help(self, command) -> None:
         """ Sends the help for a single command. """
         self.add_command_formatting(command)
