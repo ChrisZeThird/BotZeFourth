@@ -27,11 +27,11 @@ colors = {
 
 
 class ColorPicker(discord.ui.View):
-    colour = None
 
     def __init__(self, bot, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot = bot
+        self.colour = "#000000"
 
     @discord.ui.select(
         placeholder="Select a colour for your oc.",
@@ -58,6 +58,7 @@ class ColorPicker(discord.ui.View):
                                                    timeout=30.0)
                 # Set the color to the user's input
                 self.colour = response.content
+                print(response)
             except asyncio.TimeoutError:
                 # Handle timeout
                 await interaction.response.send_message("Timed out. Please try again.")

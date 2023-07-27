@@ -43,7 +43,7 @@ class OCmanager(commands.Cog):
                 await ctx.send(view=view)
                 await view.wait()
 
-                colour = view.colour[0]
+                colour = view.colour
                 await ctx.send(f'You have picked {colour} for your OC!')
 
                 print(await self.bot.pool.execute("""
