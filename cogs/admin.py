@@ -1,9 +1,8 @@
-import discord
 import json
 import os
 import sqlite3
 
-from utils import default, permissions
+from utils import permissions
 from utils.default import CustomContext
 from discord.ext import commands
 from utils.data import DiscordBot
