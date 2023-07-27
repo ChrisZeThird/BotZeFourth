@@ -33,6 +33,8 @@ submit ideas (even though you can also use the `/suggest` command on your server
 
 # Commands
 
+## List
+
 Here is the full list of commands available so far. Please note the `help` command stil uses the prefix `>`:
 
 ```yaml
@@ -49,13 +51,12 @@ Information:
   botserver         Get an invitation to our support server! 
   ping              Pong! 
 OCmanager:
-  addoc             Add OC to the database with respect to user and guild id 
-  deleteoc          Delete an oc from the database 
-  listartist        List all artists of a server 
-  listoc            List all oc of an artist 
-  modifyoc          Modify OC in the database with respect to user and guild id 
+  artistlist        List all artists of a server 
+  ocadd             Add OC to the database with respect to user and guild id 
+  ocdelete          Delete an oc from the database 
   ocinfo            Gives the information sheet of an OC 
-  randomoc          Send the description of a random selected OC 
+  oclist            List all oc of an artist 
+  ocrandom          Send the description of a random selected OC 
 Suggestion:
   suggest           Make a suggestion to the developer 
   suggestionranking Check ranking of suggestion 
@@ -63,6 +64,29 @@ Suggestion:
 ​No Category:
   help              Shows this message
 ```
+## Examples
+
+### Adding an OC
+
+Using `/ocadd` you will be asked to fill several boxes as shown below:
+
+![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/9d968273-c77a-4556-8b89-88a5f903a289)
+
+Then you will have to choose a colour for your character thanks to a drop down menu:
+
+![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/151563d2-8330-4307-9014-59e8f7735225)
+
+### Checking one or multiple OC(s)
+
+This is the most interesting part for your discorc community as an artist. You can use `/ocinfo` to get information on a specific OC from a specific artist or `ocrandom` to get a random OC from any artist on your server:
+
+![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/df02ce21-f9b3-4dfd-a601-3fe9c26eccb3)
+
+The bot will then send an embed with all the information set by the original artist:
+
+![image](https://github.com/ChrisZeThird/BotZeFourth/assets/86256324/fc9d39f1-edbb-47b6-ba15-fae8ff5c416a)
+
+You can also get the list of OC(s) owned by an artist with `/oclist` or check who have oc on your server using `/artistlist`.
 
 # Acknowledgements
 
