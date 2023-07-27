@@ -134,14 +134,14 @@ class OCmanager(commands.Cog):
                                                     SELECT * FROM users WHERE user_id = ? AND guild_id = ? AND oc_name = ?
                                                 """, ctx.message.author.id, guild_id, oc_name)
                     if not oc:
-                        await ctx.send(f"No OC found with the name {oc_name}.")
+                        await ctx.send(f"**No OC found with the name {oc_name}.**")
                         return
 
                     # Create an instance of the OCModifier view
                     oc_modifier = OCModifier(self.bot)
 
                     # Wait for the user to make their selections
-                    await ctx.send("Select fields to modify:", view=oc_modifier)
+                    await ctx.send("**Select fields to modify:**", view=oc_modifier)
                     await oc_modifier.wait()
 
                     modified_field = oc_modifier.modified_field
@@ -153,27 +153,26 @@ class OCmanager(commands.Cog):
                         await view.wait()
 
                         colour = view.colour
-                        await ctx.send(f'You have picked {colour} for your OC!')
+                        await ctx.send(f'**You have picked {colour} for your OC!**')
 
                         print(await self.bot.pool.execute(
                             f"""UPDATE users SET oc_colour = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
                             colour, user_id, guild_id, oc_name))
 
-                        await ctx.send(f'OC called {oc_name} successfully modified!')
+                        await ctx.send(f'**OC called {oc_name} successfully modified!**')
 
                     else:
-                        await ctx.send(f"Please input a new value for {modified_field}.")
+                        await ctx.send("**Please input a new value:**")
                         try:
-                            new_value = await self.bot.wait_for("message", check=lambda m: m.author == ctx.user,
-                                                               timeout=30.0)
-
+                            new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
+                            new_value = new_value.content
                             print(await self.bot.pool.execute(f"""UPDATE users SET {modified_field} = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
                                                         new_value, user_id, guild_id, oc_name))
 
-                            await ctx.send(f'OC called {oc_name} successfully modified!')
+                            await ctx.send(f'**OC called {oc_name} successfully modified!**')
 
                         except asyncio.TimeoutError:
-                            await ctx.send("Timed out. Please try again.")
+                            await ctx.send("**Timed out. Please try again.**")
                             return
 
                     # set_clause = ', '.join([f'{field} = ?' for field in new_values.keys()])
