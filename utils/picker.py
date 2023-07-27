@@ -64,7 +64,8 @@ class OCModifier(discord.ui.View):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot = bot
-        self.modified_fields = {}
+        self.modified_field = ""
+        self.colour = None
 
     @discord.ui.select(
         placeholder="Select a field to modify for your OC.",
@@ -81,15 +82,8 @@ class OCModifier(discord.ui.View):
         ]
     )
     async def select_field(self, interaction: discord.Interaction, select_item: discord.ui.Select):
-        field = select_item.values[0]
-        await interaction.response.send_message(f"Please input a new value for {field}.")
-        try:
-            response = await self.bot.wait_for("message", check=lambda m: m.author == interaction.user, timeout=30.0)
-            self.modified_fields[field] = response.content
-        except asyncio.TimeoutError:
-            await interaction.response.send_message("Timed out. Please try again.")
-            return
-
+        self.modified_field = select_item.values[0]
         self.children[0].disabled = True
         await interaction.message.edit(view=self)
+        await interaction.response.defer()
         self.stop()
