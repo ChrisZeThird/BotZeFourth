@@ -207,7 +207,7 @@ class OCmanager(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def artistlist(self, ctx: CustomContext):
         """ List all artists of a server """
-        rows = await self.bot.pool.fetch('SELECT user_name FROM users WHERE guild_id = ?', ctx.guild.id)
+        rows = await self.bot.pool.fetch('SELECT DISTINCT user_name FROM users WHERE guild_id = ?', ctx.guild.id)
 
         if rows:
             # User is in the database and has OCs
