@@ -228,32 +228,31 @@ class OCmanager(commands.Cog):
         # Store all information
         user_id = rows[0]['user_id']
         user_name = rows[0]['user_name']
-        oc_age = rows[0]['oc_name']
+        oc_name = rows[0]['oc_name']
+        oc_age = rows[0]['oc_age']
         oc_nationality = rows[0]['oc_nationality']
         oc_gender = rows[0]['oc_gender']
         oc_sexuality = rows[0]['oc_sexuality']
         oc_universe = rows[0]['oc_universe']
         oc_story = rows[0]['oc_story']
         oc_picture = rows[0]['oc_picture']
-        oc_color = int(rows[0]['oc_colour'][1:], 16)
+        oc_colour = int(rows[0]['oc_colour'][1:], 16)
 
         user = ctx.bot.get_user(user_id)
         avatar_url = user.avatar
 
         # Create embed
-        embed = init_embed()
-        embed.description = oc_story
-        embed.colour = oc_color
-
-        embed.set_field_at(0, name="Age", value=oc_age)
-        embed.set_field_at(1, name="Nationality", value=oc_nationality)
-        embed.set_field_at(2, name="Universe", value=oc_universe)
-        embed.set_field_at(3, name="Gender", value=oc_gender)
-        embed.set_field_at(4, name="Sexuality", value=oc_sexuality)
-
-        embed.set_thumbnail(url=avatar_url)  # Artist avatar
-        embed.set_image(url=oc_picture)  # OC illustration
-        embed.set_footer(text=f"Author: {user_name}")  # Artist name at the bottom
+        embed = init_embed(user_name,
+            oc_name,
+            oc_age,
+            oc_nationality,
+            oc_gender,
+            oc_sexuality,
+            oc_universe,
+            oc_story,
+            oc_picture,
+            oc_colour,
+            avatar_url)
 
         await ctx.send(embed=embed)
 
@@ -268,32 +267,30 @@ class OCmanager(commands.Cog):
         # Store all information
         user_id = rows[0]['user_id']
         user_name = rows[0]['user_name']
-        oc_age = rows[0]['oc_name']
+        oc_name = rows[0]['oc_name']
+        oc_age = rows[0]['oc_age']
         oc_nationality = rows[0]['oc_nationality']
         oc_gender = rows[0]['oc_gender']
         oc_sexuality = rows[0]['oc_sexuality']
         oc_universe = rows[0]['oc_universe']
         oc_story = rows[0]['oc_story']
         oc_picture = rows[0]['oc_picture']
-        oc_color = int(rows[0]['oc_colour'][1:], 16)
+        oc_colour = int(rows[0]['oc_colour'][1:], 16)
 
         user = ctx.bot.get_user(user_id)
         avatar_url = user.avatar
 
         # Create embed
-        embed = init_embed()
-        embed.description = oc_story
-        embed.colour = oc_color
-
-        embed.set_field_at(0, name="Age", value=oc_age)
-        embed.set_field_at(1, name="Nationality", value=oc_nationality)
-        embed.set_field_at(2, name="Universe", value=oc_universe)
-        embed.set_field_at(3, name="Gender", value=oc_gender)
-        embed.set_field_at(4, name="Sexuality", value=oc_sexuality)
-
-        embed.set_thumbnail(url=avatar_url)  # Artist avatar
-        embed.set_image(url=oc_picture)  # OC illustration
-        embed.set_footer(text=f"Author: {user_name}")  # Artist name at the bottom
+        embed = init_embed(user_name, oc_name,
+                           oc_age,
+                           oc_nationality,
+                           oc_gender,
+                           oc_sexuality,
+                           oc_universe,
+                           oc_story,
+                           oc_picture,
+                           oc_colour,
+                           avatar_url)
 
         await ctx.send(embed=embed)
 
