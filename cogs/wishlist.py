@@ -13,11 +13,10 @@ class WishList(commands.Cog):
 
     @commands.hybrid_command(name='createwishlistprofile', with_app_command=True)
     # @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
-    async def createwishlistprofile(self, ctx):
-        """ Create a new wishlist group for the user """
+    async def addtowishlist(self, ctx, item_name, item_price, item_url,):
+        """ Add items to wishlist """
         # Get guild id
         guild_id = str(ctx.guild.id)
-
 
 
 async def setup(bot):
