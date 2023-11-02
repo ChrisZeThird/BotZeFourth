@@ -34,6 +34,23 @@ class Admin(commands.Cog):
         # Confirm database creation in text channel
         await ctx.send(f"Database for {guild_name} (id: {guild_id}) was successfully created")
 
+    @commands.hybrid_command(name='serverslist', with_app_command=True)
+    @commands.is_owner()
+    async def serverslist(self, ctx):
+        servers = list(self.bot.guilds)
+        print(servers)
+        await ctx.send(f"Connected on {str(len(servers))} servers:")
+        await ctx.send('\n'.join(guild.name for guild in servers))
+
+    @commands.hybrid_command(name='leaveserver', with_app_command=True)
+    @commands.is_owner()
+    async def leaveserver(self, ctx, server_id):
+        """ Leave a server with its id given as argument, only available to bot owner"""
+        guild = await self.bot.fetch_guild(server_id)
+        print(guild)
+        await guild.leave()
+        await ctx.send(f"Left server {guild.name}")
+
     @commands.hybrid_command(name='addrole', with_app_command=True)
     @commands.has_permissions(manage_roles=True)
     async def addrole(self, ctx: CustomContext, role):
