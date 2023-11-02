@@ -57,6 +57,13 @@ class Events(commands.Cog):
         if to_send:
             await to_send.send(self.bot.config.discord_join_message)
 
+        print(await self.bot.pool.execute("""
+                            INSERT INTO guilds (
+                                  guild_id
+                                )  VALUES (?) 
+                            """, guild.id)
+              )
+
     @commands.Cog.listener()
     async def on_command(self, ctx: CustomContext):
         location_name = ctx.guild.name if ctx.guild else "Private message"

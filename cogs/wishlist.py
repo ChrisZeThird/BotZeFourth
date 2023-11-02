@@ -15,7 +15,9 @@ class WishList(commands.Cog):
     # @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     async def createwishlistprofile(self, ctx):
         """ Create a new wishlist group for the user """
-        print('hello')
+        # Get guild id
+        guild_id = str(ctx.guild.id)
+
 
 
 async def setup(bot):
