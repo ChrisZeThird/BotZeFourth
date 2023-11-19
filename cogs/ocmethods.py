@@ -8,7 +8,12 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
-from utils.picker import ColorPicker, OCModifier
+from utils.picker import ColorPicker, MyView
+
+
+# For dropdown menu options
+labels_oc_field = ['Name', 'Age', 'Nationality', 'Gender', 'Sexuality', 'Universe', 'Story', 'Picture', 'Colour']
+values_oc_field = ['oc_name', 'oc_age', 'oc_nationality', 'oc_gender', 'oc_sexuality', 'oc_universe', 'oc_story', 'oc_picture', 'oc_colour']
 
 
 class OCmanager(commands.Cog):
@@ -122,33 +127,23 @@ class OCmanager(commands.Cog):
                 result = await self.bot.pool.fetch('SELECT * FROM characters WHERE user_id = ?', user_id)
                 # List the OC(s)
                 oc_list = [row['oc_name'] for row in result]  # Extract the oc_name values from the rows
-                oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
 
                 def check(m):
                     return m.author == ctx.author
 
-                # Ask what OC name to delete
-                await ctx.send(
-                    f"# :screwdriver: Enter the name of the character to modify from the following list:\n**{oc_list_str}**")
+                # Create an instance of the DropdownMenu view for the oc names
+                oc_name_selector = MyView(labels=oc_list, values=oc_list)
+                await ctx.send(content='**Select the OC to modify**', view=oc_name_selector)
+                await oc_name_selector.wait()  # continues after stop() or timeout
+                selected_oc = oc_name_selector.value
+
                 try:
-                    oc_name = await self.bot.wait_for('message', check=check, timeout=20)
-                    oc_name = oc_name.content
-                    # Check if the OC exists
-                    oc = await self.bot.pool.fetch("""
-                                                    SELECT * FROM characters WHERE user_id = ? AND guild_id = ? AND oc_name = ?
-                                                """, ctx.message.author.id, guild_id, oc_name)
-                    if not oc:
-                        await ctx.send(f"**No OC found with the name {oc_name}.**")
-                        return
-
-                    # Create an instance of the OCModifier view
-                    oc_modifier = OCModifier(self.bot)
-
+                    # Create an instance of the DropdownMenu view for the oc fields
+                    oc_modifier = MyView(labels=labels_oc_field, values=values_oc_field)
                     # Wait for the user to make their selections
                     await ctx.send("**Select fields to modify:**", view=oc_modifier)
                     await oc_modifier.wait()
-
-                    modified_field = oc_modifier.modified_field
+                    modified_field = oc_modifier.value
 
                     # Get the modified field and update the OC in the database
                     if modified_field == 'oc_colour':
@@ -161,9 +156,9 @@ class OCmanager(commands.Cog):
 
                         print(await self.bot.pool.execute(
                             f"""UPDATE characters SET oc_colour = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
-                            colour, user_id, guild_id, oc_name))
+                            colour, user_id, guild_id, selected_oc))
 
-                        await ctx.send(f'**OC called {oc_name} successfully modified!**')
+                        await ctx.send(f'**OC called {selected_oc} successfully modified!**')
 
                     elif modified_field == 'oc_picture':
                         await ctx.send("**Please send a new picture:**")
@@ -175,9 +170,9 @@ class OCmanager(commands.Cog):
 
                                 print(await self.bot.pool.execute(
                                     f"""UPDATE characters SET oc_picture = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
-                                    oc_picture, user_id, guild_id, oc_name))
+                                    oc_picture, user_id, guild_id, selected_oc))
 
-                                await ctx.send(f'**OC called {oc_name} successfully modified!**')
+                                await ctx.send(f'**OC called {selected_oc} successfully modified!**')
 
                             else:
                                 # The attachment is not a PNG or JPEG file
@@ -193,9 +188,9 @@ class OCmanager(commands.Cog):
                             new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
                             new_value = new_value.content
                             print(await self.bot.pool.execute(f"""UPDATE characters SET {modified_field} = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
-                                                        new_value, user_id, guild_id, oc_name))
+                                                        new_value, user_id, guild_id, selected_oc))
 
-                            await ctx.send(f'**OC called {oc_name} successfully modified!**')
+                            await ctx.send(f'**OC called {selected_oc} successfully modified!**')
 
                         except asyncio.TimeoutError:
                             await ctx.send("**Timed out. Please try again.**")

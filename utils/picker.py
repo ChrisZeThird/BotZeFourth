@@ -87,3 +87,23 @@ class OCModifier(discord.ui.View):
         await interaction.message.edit(view=self)
         await interaction.response.defer()
         self.stop()
+
+
+class MySelectMenu(discord.ui.Select):
+    def __init__(self, labels, values):
+        self.labels = labels
+        options = []
+        for label, value in zip(labels, values):
+            options.append(discord.SelectOption(label=label, value=value))
+        super().__init__(placeholder='Select an option...', min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.view.value = self.values[0]  # Save the selected value for later use
+        self.view.stop()
+
+
+class MyView(discord.ui.View):
+    def __init__(self, labels, values):
+        super().__init__()
+        self.value = None
+        self.add_item(MySelectMenu(labels, values))
