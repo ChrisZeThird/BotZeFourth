@@ -16,7 +16,7 @@ def init_embed(user_name,
 
     # Create a discord.File object from the image data
     file = discord.File(BytesIO(oc_picture), filename='oc_picture.png')
-    print(file)
+
     # Name and description
     embed = discord.Embed(title=oc_name,
                           description=oc_story,

@@ -169,7 +169,6 @@ class OCmanager(commands.Cog):
                         await ctx.send("**Please send a new picture:**")
                         try:
                             new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
-                            new_value_content = new_value.content
 
                             if new_value.attachments and new_value.attachments[0].content_type in ['image/png', 'image/jpeg']:
                                 oc_picture = await new_value.attachments[0].read()
@@ -269,17 +268,18 @@ class OCmanager(commands.Cog):
         avatar_url = user.avatar
 
         # Create embed
-        embed, file = init_embed(user_name,
-            oc_name,
-            oc_age,
-            oc_nationality,
-            oc_gender,
-            oc_sexuality,
-            oc_universe,
-            oc_story,
-            oc_picture,
-            oc_colour,
-            avatar_url)
+        embed, file = init_embed(user_name, oc_name,
+                           oc_age,
+                           oc_nationality,
+                           oc_gender,
+                           oc_sexuality,
+                           oc_universe,
+                           oc_story,
+                           oc_picture,
+                           oc_colour,
+                           avatar_url)
+
+        print(type(file))
 
         await ctx.send(file=file, embed=embed)
 
