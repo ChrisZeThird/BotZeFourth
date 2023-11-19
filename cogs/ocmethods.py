@@ -36,25 +36,29 @@ class OCmanager(commands.Cog):
             # print(roles_list)
             # Check is user is allowed to use the database
             if any(str(role) in roles_list for role in user_roles):
-                user_id = ctx.message.author.id
-                user_name = ctx.message.author.name
+                if picture.content_type in ['image/png', 'image/jpeg']:
+                    user_id = ctx.message.author.id
+                    user_name = ctx.message.author.name
 
-                view = ColorPicker(bot=self.bot)
-                await ctx.send(view=view)
-                await view.wait()
+                    view = ColorPicker(bot=self.bot)
+                    await ctx.send(view=view)
+                    await view.wait()
 
-                colour = view.colour
-                await ctx.send(f'You have picked {colour} for your OC!')
+                    colour = view.colour
+                    await ctx.send(f'You have picked {colour} for your OC!')
 
-                print(await self.bot.pool.execute("""
-                    INSERT INTO users (
-                          user_id, guild_id, user_name, oc_name, oc_age, oc_nationality,
-                          oc_gender, oc_sexuality, oc_universe, oc_story, oc_picture, oc_colour
-                        )  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
-                    """, user_id, guild_id, user_name, name, age, nationality, gender, sexuality, universe, desc, picture.url, colour)
-                      )
-                await ctx.send(f'Character successfully added for <@{user_id}>!')
-
+                    oc_picture = await picture.read()
+                    print(await self.bot.pool.execute("""
+                        INSERT INTO characters (
+                              user_id, guild_id, user_name, oc_name, oc_age, oc_nationality,
+                              oc_gender, oc_sexuality, oc_universe, oc_story, oc_picture, oc_colour
+                            )  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+                        """, user_id, guild_id, user_name, name, age, nationality, gender, sexuality, universe, desc, oc_picture, colour)
+                          )
+                    await ctx.send(f'Character successfully added for <@{user_id}>!')
+                else:
+                    # The attachment is not a PNG or JPEG file
+                    await ctx.send("Please attach a **PNG** or **JPEG** file.")
             else:
                 await ctx.send("**If you think you should be able to add a character to the database, contact your local admins.**")
 
@@ -73,7 +77,7 @@ class OCmanager(commands.Cog):
             # Check is user is allowed to use the database
             if any(role in roles_list for role in user_roles):
                 user_id = ctx.message.author.id
-                result = await self.bot.pool.fetch('SELECT * FROM users WHERE user_id = ?', user_id)
+                result = await self.bot.pool.fetch('SELECT * FROM characters WHERE user_id = ?', user_id)
 
                 if result is not None:
                     def check(m):
@@ -87,7 +91,7 @@ class OCmanager(commands.Cog):
                     await ctx.send(f"# :broom: Enter the name of the character to delete from the following list:\n**{oc_list_str}**")
                     try:
                         oc_name = await self.bot.wait_for('message', check=check, timeout=15)
-                        await self.bot.pool.execute('DELETE FROM users WHERE user_id = ? AND oc_name = ?', user_id,
+                        await self.bot.pool.execute('DELETE FROM characters WHERE user_id = ? AND oc_name = ?', user_id,
                                                     oc_name.content)
 
                         await ctx.send(f'Character successfully deleted for <@{user_id}>!')
@@ -115,7 +119,7 @@ class OCmanager(commands.Cog):
             # Check if user is allowed to use the database
             if any(str(role) in roles_list for role in user_roles):
                 # Get OC list for specified user
-                result = await self.bot.pool.fetch('SELECT * FROM users WHERE user_id = ?', user_id)
+                result = await self.bot.pool.fetch('SELECT * FROM characters WHERE user_id = ?', user_id)
                 # List the OC(s)
                 oc_list = [row['oc_name'] for row in result]  # Extract the oc_name values from the rows
                 oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
@@ -131,7 +135,7 @@ class OCmanager(commands.Cog):
                     oc_name = oc_name.content
                     # Check if the OC exists
                     oc = await self.bot.pool.fetch("""
-                                                    SELECT * FROM users WHERE user_id = ? AND guild_id = ? AND oc_name = ?
+                                                    SELECT * FROM characters WHERE user_id = ? AND guild_id = ? AND oc_name = ?
                                                 """, ctx.message.author.id, guild_id, oc_name)
                     if not oc:
                         await ctx.send(f"**No OC found with the name {oc_name}.**")
@@ -156,17 +160,39 @@ class OCmanager(commands.Cog):
                         await ctx.send(f'**You have picked {colour} for your OC!**')
 
                         print(await self.bot.pool.execute(
-                            f"""UPDATE users SET oc_colour = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
+                            f"""UPDATE characters SET oc_colour = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
                             colour, user_id, guild_id, oc_name))
 
                         await ctx.send(f'**OC called {oc_name} successfully modified!**')
+
+                    elif modified_field == 'oc_picture':
+                        await ctx.send("**Please send a new picture:**")
+                        try:
+                            new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
+
+                            if new_value.attachments and new_value.attachments[0].content_type in ['image/png', 'image/jpeg']:
+                                oc_picture = await new_value.attachments[0].read()
+
+                                print(await self.bot.pool.execute(
+                                    f"""UPDATE characters SET oc_picture = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
+                                    oc_picture, user_id, guild_id, oc_name))
+
+                                await ctx.send(f'**OC called {oc_name} successfully modified!**')
+
+                            else:
+                                # The attachment is not a PNG or JPEG file
+                                await ctx.send("Please attach a **PNG** or **JPEG** file.")
+
+                        except asyncio.TimeoutError:
+                            await ctx.send("**Timed out. Please try again.**")
+                            return
 
                     else:
                         await ctx.send("**Please input a new value:**")
                         try:
                             new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
                             new_value = new_value.content
-                            print(await self.bot.pool.execute(f"""UPDATE users SET {modified_field} = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
+                            print(await self.bot.pool.execute(f"""UPDATE characters SET {modified_field} = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
                                                         new_value, user_id, guild_id, oc_name))
 
                             await ctx.send(f'**OC called {oc_name} successfully modified!**')
@@ -177,7 +203,7 @@ class OCmanager(commands.Cog):
 
                     # set_clause = ', '.join([f'{field} = ?' for field in new_values.keys()])
                     # values = list(new_values.values()) + [ctx.message.author.id, guild_id, oc_name]
-                    # await self.bot.pool.execute(f"""UPDATE users SET {set_clause} WHERE user_id = ? AND guild_id = ? AND oc_name = ?
+                    # await self.bot.pool.execute(f"""UPDATE characters SET {set_clause} WHERE user_id = ? AND guild_id = ? AND oc_name = ?
                     #         """, *values)
 
                 except asyncio.TimeoutError:
@@ -192,7 +218,7 @@ class OCmanager(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def oclist(self, ctx: CustomContext, artist_name):
         """ List all oc of an artist """
-        rows = await self.bot.pool.fetch('SELECT oc_name FROM users WHERE user_name = ?', artist_name)
+        rows = await self.bot.pool.fetch('SELECT oc_name FROM characters WHERE user_name = ?', artist_name)
 
         if rows:
             # User is in the database and has OCs
@@ -207,7 +233,7 @@ class OCmanager(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def artistlist(self, ctx: CustomContext):
         """ List all artists of a server """
-        rows = await self.bot.pool.fetch('SELECT DISTINCT user_name FROM users WHERE guild_id = ?', ctx.guild.id)
+        rows = await self.bot.pool.fetch('SELECT DISTINCT user_name FROM characters WHERE guild_id = ?', ctx.guild.id)
 
         if rows:
             # User is in the database and has OCs
@@ -223,7 +249,7 @@ class OCmanager(commands.Cog):
     async def ocrandom(self, ctx: CustomContext):
         """ Send the description of a random selected OC """
         # Get sqlite row
-        rows = await self.bot.pool.fetch('SELECT * FROM users WHERE guild_id = ? ORDER BY RANDOM() LIMIT 1', ctx.guild.id)
+        rows = await self.bot.pool.fetch('SELECT * FROM characters WHERE guild_id = ? ORDER BY RANDOM() LIMIT 1', ctx.guild.id)
 
         # Store all information
         user_id = rows[0]['user_id']
@@ -242,26 +268,27 @@ class OCmanager(commands.Cog):
         avatar_url = user.avatar
 
         # Create embed
-        embed = init_embed(user_name,
-            oc_name,
-            oc_age,
-            oc_nationality,
-            oc_gender,
-            oc_sexuality,
-            oc_universe,
-            oc_story,
-            oc_picture,
-            oc_colour,
-            avatar_url)
+        embed, file = init_embed(user_name, oc_name,
+                           oc_age,
+                           oc_nationality,
+                           oc_gender,
+                           oc_sexuality,
+                           oc_universe,
+                           oc_story,
+                           oc_picture,
+                           oc_colour,
+                           avatar_url)
 
-        await ctx.send(embed=embed)
+        print(type(file))
+
+        await ctx.send(file=file, embed=embed)
 
     @commands.hybrid_command(name='ocinfo', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def ocinfo(self, ctx: CustomContext, artist_name, oc_name):
         """ Gives the information sheet of an OC """
         # Get sqlite row
-        rows = await self.bot.pool.fetch('SELECT * FROM users WHERE guild_id = ? AND user_name = ? AND oc_name = ?',
+        rows = await self.bot.pool.fetch('SELECT * FROM characters WHERE guild_id = ? AND user_name = ? AND oc_name = ?',
                                          ctx.guild.id, artist_name, oc_name)
 
         # Store all information
@@ -281,7 +308,7 @@ class OCmanager(commands.Cog):
         avatar_url = user.avatar
 
         # Create embed
-        embed = init_embed(user_name, oc_name,
+        embed, file = init_embed(user_name, oc_name,
                            oc_age,
                            oc_nationality,
                            oc_gender,
@@ -292,7 +319,7 @@ class OCmanager(commands.Cog):
                            oc_colour,
                            avatar_url)
 
-        await ctx.send(embed=embed)
+        await ctx.send(file=file, embed=embed)
 
 
 async def setup(bot):
