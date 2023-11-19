@@ -165,6 +165,29 @@ class OCmanager(commands.Cog):
 
                         await ctx.send(f'**OC called {oc_name} successfully modified!**')
 
+                    elif modified_field == 'oc_picture':
+                        await ctx.send("**Please send a new picture:**")
+                        try:
+                            new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
+                            new_value_content = new_value.content
+
+                            if new_value.attachments and new_value.attachments[0].content_type in ['image/png', 'image/jpeg']:
+                                oc_picture = await new_value.attachments[0].read()
+
+                                print(await self.bot.pool.execute(
+                                    f"""UPDATE characters SET oc_picture = ? WHERE user_id = ? AND guild_id = ? AND oc_name = ?""",
+                                    oc_picture, user_id, guild_id, oc_name))
+
+                                await ctx.send(f'**OC called {oc_name} successfully modified!**')
+
+                            else:
+                                # The attachment is not a PNG or JPEG file
+                                await ctx.send("Please attach a **PNG** or **JPEG** file.")
+
+                        except asyncio.TimeoutError:
+                            await ctx.send("**Timed out. Please try again.**")
+                            return
+
                     else:
                         await ctx.send("**Please input a new value:**")
                         try:
@@ -246,7 +269,7 @@ class OCmanager(commands.Cog):
         avatar_url = user.avatar
 
         # Create embed
-        embed = init_embed(user_name,
+        embed, file = init_embed(user_name,
             oc_name,
             oc_age,
             oc_nationality,
@@ -258,7 +281,7 @@ class OCmanager(commands.Cog):
             oc_colour,
             avatar_url)
 
-        await ctx.send(embed=embed)
+        await ctx.send(file=file, embed=embed)
 
     @commands.hybrid_command(name='ocinfo', with_app_command=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
@@ -285,7 +308,7 @@ class OCmanager(commands.Cog):
         avatar_url = user.avatar
 
         # Create embed
-        embed = init_embed(user_name, oc_name,
+        embed, file = init_embed(user_name, oc_name,
                            oc_age,
                            oc_nationality,
                            oc_gender,
@@ -296,7 +319,7 @@ class OCmanager(commands.Cog):
                            oc_colour,
                            avatar_url)
 
-        await ctx.send(embed=embed)
+        await ctx.send(file=file, embed=embed)
 
 
 async def setup(bot):
