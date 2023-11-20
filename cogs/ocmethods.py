@@ -219,7 +219,9 @@ class OcManager(commands.Cog):
             # User is in the database and has OCs
             oc_list = [row['oc_name'] for row in rows]  # Extract the oc_name values from the rows
             oc_list_str = "\n".join(oc_list)  # Join the oc_list elements with newlines
-            await ctx.send(f"# :clipboard: OCs for {artist_name}:\n**{oc_list_str}**")
+            embed = discord.Embed(title=f":clipboard: OCs of {artist_name}", description=f"**{oc_list_str}**",
+                                  color=0xffffff)
+            await ctx.send(embed=embed)
         else:
             # User is not in the database or does not have OCs
             await ctx.send(f"{artist_name} do not have any OCs!")
@@ -234,7 +236,9 @@ class OcManager(commands.Cog):
             # User is in the database and has OCs
             artist_list = [row['user_name'] for row in rows]  # Extract the oc_name values from the rows
             artist_list_str = "\n".join(artist_list)  # Join the oc_list elements with newlines
-            await ctx.send(f"# :clipboard: Artist with OCs:\n**{artist_list_str}**")
+            embed = discord.Embed(title=":clipboard: List of Artists with OCs", description=f"**{artist_list_str}**",
+                                  color=0xffffff)
+            await ctx.send(embed=embed)
         else:
             # User is not in the database or does not have OCs
             await ctx.send(f"No artist has been found!")

@@ -71,7 +71,10 @@ class Suggestion(commands.Cog):
         suggestions_str = "\n".join([f"** {ordinal_suffix(i+1)}**: {s['suggestion']} *(ID: {s['id']} | Votes: {s['votes']})*" for s, i in zip(top_suggestions, range(len(top_suggestions)))])
 
         # Send the top suggestions
-        await ctx.send(f"# :bookmark_tabs:  Top suggestions:\n{suggestions_str}")
+        # await ctx.send(f"# :bookmark_tabs:  Top suggestions:\n{suggestions_str}")
+        embed = discord.Embed(title="List of suggestions", description=f"{suggestions_str}",
+                              color=0xffffff)
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):
