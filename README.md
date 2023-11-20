@@ -37,35 +37,9 @@ submit ideas (even though you can also use the `/suggest` command on your server
 
 ## List
 
-Here is the full list of commands available so far. Please note the `help` command stil uses the prefix `>`:
+To access the list of all the commands, you just need to use the `/help` command. It takes an optional argument, whether you need to know the command directly, or
+the commands of a specific category.
 
-```yaml
-Admin:
-  addchannel        
-  addrole           Add roles allowed to use the bot
-  createdatabase    Create a database for your server. You can either make it...
-  removerole        Remove roles allowed to use the bot
-DiscordInfo:
-  avatar            Get the avatar of you or someone else 
-  joindate          Check when a user joined the current server 
-  roles             Get all roles in current server 
-Information:
-  botserver         Get an invitation to our support server! 
-  ping              Pong! 
-OCmanager:
-  artistlist        List all artists of a server 
-  ocadd             Add OC to the database with respect to user and guild id 
-  ocdelete          Delete an oc from the database 
-  ocinfo            Gives the information sheet of an OC 
-  oclist            List all oc of an artist 
-  ocrandom          Send the description of a random selected OC 
-Suggestion:
-  suggest           Make a suggestion to the developer 
-  suggestionranking Check ranking of suggestion 
-  suggestionvote    Vote for a suggestion 
-​No Category:
-  help              Shows this message
-```
 ## Examples
 
 ### Adding an OC
