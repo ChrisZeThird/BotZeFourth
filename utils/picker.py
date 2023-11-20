@@ -60,35 +60,6 @@ class ColorPicker(discord.ui.View):
         self.stop()
 
 
-class OCModifier(discord.ui.View):
-    def __init__(self, bot, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.bot = bot
-        self.modified_field = ""
-        self.colour = None
-
-    @discord.ui.select(
-        placeholder="Select a field to modify for your OC.",
-        options=[
-            discord.SelectOption(label="OC Name", value="oc_name"),
-            discord.SelectOption(label="OC Age", value="oc_age"),
-            discord.SelectOption(label="OC Nationality", value="oc_nationality"),
-            discord.SelectOption(label="OC Gender", value="oc_gender"),
-            discord.SelectOption(label="OC Sexuality", value="oc_sexuality"),
-            discord.SelectOption(label="OC Universe", value="oc_universe"),
-            discord.SelectOption(label="OC Story", value="oc_story"),
-            discord.SelectOption(label="OC Picture", value="oc_picture"),
-            discord.SelectOption(label="OC Colour", value="oc_colour")
-        ]
-    )
-    async def select_field(self, interaction: discord.Interaction, select_item: discord.ui.Select):
-        self.modified_field = select_item.values[0]
-        self.children[0].disabled = True
-        await interaction.message.edit(view=self)
-        await interaction.response.defer()
-        self.stop()
-
-
 class MySelectMenu(discord.ui.Select):
     def __init__(self, labels, values):
         self.labels = labels

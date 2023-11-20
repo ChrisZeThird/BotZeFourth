@@ -16,7 +16,7 @@ labels_oc_field = ['Name', 'Age', 'Nationality', 'Gender', 'Sexuality', 'Univers
 values_oc_field = ['oc_name', 'oc_age', 'oc_nationality', 'oc_gender', 'oc_sexuality', 'oc_universe', 'oc_story', 'oc_picture', 'oc_colour']
 
 
-class OCmanager(commands.Cog):
+class OcManager(commands.Cog):
     def __init__(self, bot):
         self.bot: DiscordBot = bot
         # Check if the JSON file exists
@@ -274,8 +274,6 @@ class OCmanager(commands.Cog):
                            oc_colour,
                            avatar_url)
 
-        print(type(file))
-
         await ctx.send(file=file, embed=embed)
 
     @commands.hybrid_command(name='ocinfo', with_app_command=True)
@@ -318,4 +316,4 @@ class OCmanager(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(OCmanager(bot))
+    await bot.add_cog(OcManager(bot))

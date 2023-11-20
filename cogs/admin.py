@@ -12,33 +12,34 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot: DiscordBot = bot
 
-    @commands.hybrid_command(name='createdatabase', with_app_command=True)
-    @commands.check(permissions.is_owner)
-    async def createdatabase(self, ctx: CustomContext):
-        """ Create a database for your server. You can either make it 'private' or 'public'."""
-        # Get guild id
-        guild_name = ctx.guild.name
-        guild_id = str(ctx.guild.id)
-
-        # Connect to sqlite database
-        con = sqlite3.connect("database.db")
-        cur = con.cursor()
-
-        # Create database according to guild id
-        cur.execute(f"CREATE TABLE guild_{guild_id} (author_name TEXT, author_id INTEGER, oc_name TEXT, oc_age INTEGER, oc_nationality TEXT, oc_gender TEXT, oc_sexuality TEXT, oc_universe TXT, oc_story TEXT, oc_picture, oc_colour)")
-        # Commit changes
-        con.commit()
-        # Close cursor
-        con.close()
-
-        # Confirm database creation in text channel
-        await ctx.send(f"Database for {guild_name} (id: {guild_id}) was successfully created")
+    # @commands.hybrid_command(name='createdatabase', with_app_command=True)
+    # @commands.check(permissions.is_owner)
+    # async def createdatabase(self, ctx: CustomContext):
+    #     """ Create a database for your server. You can either make it 'private' or 'public'."""
+    #     # Get guild id
+    #     guild_name = ctx.guild.name
+    #     guild_id = str(ctx.guild.id)
+    #
+    #     # Connect to sqlite database
+    #     con = sqlite3.connect("database.db")
+    #     cur = con.cursor()
+    #
+    #     # Create database according to guild id
+    #     cur.execute(f"CREATE TABLE guild_{guild_id} (author_name TEXT, author_id INTEGER, oc_name TEXT, oc_age INTEGER, oc_nationality TEXT, oc_gender TEXT, oc_sexuality TEXT, oc_universe TXT, oc_story TEXT, oc_picture, oc_colour)")
+    #     # Commit changes
+    #     con.commit()
+    #     # Close cursor
+    #     con.close()
+    #
+    #     # Confirm database creation in text channel
+    #     await ctx.send(f"Database for {guild_name} (id: {guild_id}) was successfully created")
 
     @commands.hybrid_command(name='serverslist', with_app_command=True)
     @commands.is_owner()
     async def serverslist(self, ctx):
+        """ Give the list of servers where the bot is on (only for bot owner) """
         servers = list(self.bot.guilds)
-        print(servers)
+        # print(servers)
         await ctx.send(f"Connected on {str(len(servers))} servers:")
         await ctx.send('\n'.join(guild.name for guild in servers))
 

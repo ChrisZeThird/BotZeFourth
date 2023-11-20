@@ -9,12 +9,13 @@ intents = Intents.all()
 bot = data.DiscordBot(
     config=config, command_prefix=config.discord_prefix,
     prefix=config.discord_prefix, command_attrs=dict(hidden=True),
-    help_command=data.HelpFormat(),
+    help_command=None,
     allowed_mentions=discord.AllowedMentions(
         everyone=False, roles=False, users=True
     ),
     intents=intents
 )
+
 
 try:
     bot.run(config.discord_token)

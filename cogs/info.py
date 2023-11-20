@@ -35,7 +35,7 @@ class Information(commands.Cog):
     async def botserver(self, ctx: CustomContext):
         """ Get an invitation to our support server! """
         if isinstance(ctx.channel, discord.DMChannel) or ctx.guild.id != 86484642730885120:
-            return await ctx.send(f"**The template used was developed by AlexFlipnote: **\nhttps://discord.gg/DpxkY3x \n \n"
+            return await ctx.send(f"**The ground template used was developed by AlexFlipnote: **\nhttps://discord.gg/DpxkY3x \n \n"
                                   f"**You can also join the server of ChrisZeThird: **\nhttps://discord.gg/TcwjZhE")
 
 
