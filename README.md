@@ -7,6 +7,8 @@ confident tackling this project, especially thanks to *GitHub* and *Pycharm*.
 Artists can create information cards about their characters, and users on discord just have to run a command to read the 
 card. For now, there are basic functionalities. I'm actively looking for feedbacks!
 
+***The bot is currently not in public mode, so only I can add it to a server, if you want to test it out, send me a direct message on discord or by email at chriszethird.contact@gmail.com***
+
 # Quick set-up
 Start by inviting the bot to your server using this
 [link](https://discord.com/api/oauth2/authorize?client_id=848583084119031808&permissions=397553036369&scope=bot).
