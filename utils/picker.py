@@ -1,6 +1,7 @@
 import asyncio
 import discord
 
+# Color picker
 colors = {
         "red": "#FF0000",
         "blue": "#0000FF",
@@ -60,6 +61,7 @@ class ColorPicker(discord.ui.View):
         self.stop()
 
 
+# General definition of select menu
 class MySelectMenu(discord.ui.Select):
     def __init__(self, labels, values):
         self.labels = labels
@@ -78,3 +80,28 @@ class MyView(discord.ui.View):
         super().__init__()
         self.value = None
         self.add_item(MySelectMenu(labels, values))
+
+
+# Button for character statistics definition
+class StatButtons(discord.ui.Button):
+    def __init__(self, label):
+        super().__init__(style=discord.ButtonStyle.secondary, label=label)
+        self.label = label
+
+    # This function is called whenever this particular button is pressed
+    async def callback(self, interaction: discord.Interaction):
+        assert self.view is not None
+        view: OCStat = self.view
+        view.selected_label = self.label  # Store the selected label in the OCStat view
+        view.stop()
+        # await interaction.response.send_message(self.label)
+
+
+# This is our actual statistics selection View
+class OCStat(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.selected_label = None
+        for i in range(11):
+            self.add_item(StatButtons(label=str(i)))
+

@@ -38,7 +38,7 @@ class Suggestion(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="suggest", with_app_command=True)
-    @commands.cooldown(1, 86400, commands.BucketType.user)
+    @commands.cooldown(1, 60, commands.BucketType.user)
     async def suggest(self, ctx: CustomContext, suggestion: str):
         """ Make a suggestion to the developer """
         user_id = ctx.message.author.id

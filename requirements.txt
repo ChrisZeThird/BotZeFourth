@@ -5,3 +5,4 @@ psutil
 python-dotenv
 discord-py-interactions
 postgreslite==0.1.3
+Pillow
