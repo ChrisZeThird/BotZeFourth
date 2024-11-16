@@ -1,3 +1,4 @@
+import discord
 import json
 import os
 import sqlite3
@@ -140,6 +141,47 @@ class Admin(commands.Cog):
 
         else:
             await ctx.send("Invalid channel ID.")
+
+    @commands.hybrid_command(name='sendmessage', with_app_command=True)
+    @commands.has_permissions(administrator=True)
+    async def sendmessage(self, ctx: CustomContext, channel_id, message_to_send):
+        channel = self.bot.get_channel(int(channel_id))
+        await channel.send(message_to_send)
+        await ctx.send('Message was successfully delivered')
+
+    @commands.hybrid_command(name='makeinvite', with_app_command=True)
+    @commands.has_permissions(administrator=True)
+    async def makeinvite(self, ctx, channel_id: discord.abc.GuildChannel = None):
+        """
+        Generates an invitation link for any server the bot is in.
+
+        Parameters:
+        channel: The ID of channel you want to generate an invitation for. If not provided, it will use the current channel where command was used.
+        """
+        if channel_id is None:
+            invite = await ctx.channel.create_invite(max_uses=1, unique=True)
+            await ctx.send(invite)
+        else:
+            invite = await channel_id.create_invite(max_uses=1, unique=True)
+            await ctx.send(invite)
+
+    @commands.hybrid_command(name='listmembers', with_app_command=True)
+    @commands.has_permissions(administrator=True)
+    async def listmembers(self, ctx, server_id = None):
+        """
+        Make a list of all discord members for a given Guild
+
+        :param ctx:
+        :param server_id:
+        :return:
+        """
+        embed = discord.Embed(title="Member List", color=discord.Color.blue())
+        guild_to_check = ctx.guild if server_id is None else self.bot.get_guild(int(server_id))
+
+        member_list = "\n".join([f'{member.name} (ID: {member.id})' for member in guild_to_check.members])
+        embed.description = f"Members of {guild_to_check.name}:\n{member_list}"
+
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):

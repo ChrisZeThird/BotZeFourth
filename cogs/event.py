@@ -19,20 +19,35 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: CustomContext, err: Exception):
+        # Define the target server and channel IDs
+        TARGET_GUILD_ID = 464553751030661120  # Replace with your Discord server (guild) ID
+        TARGET_CHANNEL_ID = 661219101770776611  # Replace with your target channel ID
+
         if isinstance(err, errors.MissingRequiredArgument) or isinstance(err, errors.BadArgument):
             helper = str(ctx.invoked_subcommand) if ctx.invoked_subcommand else str(ctx.command)
-            await ctx.send_help(helper)
+            # Fetch the target channel
+            target_guild = self.bot.get_guild(TARGET_GUILD_ID)  # Replace `self.bot` with your bot's instance if needed
+            if target_guild:
+                target_channel = target_guild.get_channel(TARGET_CHANNEL_ID)
+                if not target_channel:
+                    target_channel = await target_guild.fetch_channel(TARGET_CHANNEL_ID)
+
+                if target_channel:
+                    await target_channel.send(f"Error details: {helper}")
+
+            # Send a generic message to the current channel
+            await ctx.send("There was an error processing the command ;-;")
 
         elif isinstance(err, errors.CommandInvokeError) or isinstance(err, errors.HybridCommandError):
-            error = default.traceback_maker(err.original)
-
+            # error = default.traceback_maker(err.original)
+            # print(default.traceback_maker(err))
             if "2000 or fewer" in str(err) and len(ctx.message.clean_content) > 1900:
                 return await ctx.send("\n".join([
                     "You attempted to make the command display more than 2,000 characters...",
                     "Both error and command will be ignored."
                 ]))
 
-            await ctx.send(f"There was an error processing the command ;-;\n{error}")
+            await ctx.send(f"There was an error processing the command ;-;")
 
         elif isinstance(err, errors.CheckFailure):
             pass
@@ -60,7 +75,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx: CustomContext):
         location_name = ctx.guild.name if ctx.guild else "Private message"
-        print(f"{location_name} > {ctx.author} > {ctx.message.clean_content}")
+        command_name = ctx.command.name if ctx.command else "Unknown command"
+        print(f"{location_name} > {ctx.author} > {command_name}")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -91,6 +107,16 @@ class Events(commands.Cog):
 
         # Indicate that the bot has successfully booted up
         print(f"Ready: {self.bot.user} | Servers: {len(self.bot.guilds)}")
+        # print('Server ID: 'self.bot.guilds)
+        # guild_dic = {}
+
+        # for guild in self.bot.guilds:
+        #     text_channel_list = []
+        #     for channel in guild.channels:
+        #         if str(channel.type) == 'text':
+        #             text_channel_list.append((channel.id, channel.name))
+        #     guild_dic[str(guild.name)] = text_channel_list
+        # print(guild_dic["J-Productions's server"])
 
 
 async def setup(bot):
