@@ -83,7 +83,7 @@ async def get_dnd_character_page(index: int, character_id: int):
     wisdom = result['wisdom']
     charisma = result['charisma']
     color = result['color']
-    oc_picture = result['oc_picture']
+    oc_picture = result['picture_url']
     backstory = result['backstory']
     appearance = result['appearance']
 

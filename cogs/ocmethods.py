@@ -7,7 +7,7 @@ from discord.ext import commands
 from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
-from utils.misc import extract_role_ids
+from utils.misc import extract_role_ids, scrub
 from utils.picker import ColorPicker, MyView
 
 
@@ -28,22 +28,42 @@ class OcManager(commands.Cog):
 
     @commands.hybrid_command(name='ocadd', with_app_command=True)
     # @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
-    async def ocadd(self, ctx, name, age, nationality, gender, sexuality, universe, desc, picture: discord.Attachment):
+    async def ocadd(self, ctx, name, age, gender, sexuality, species, height, desc, picture: discord.Attachment):
         """ Add OC to the database with respect to user and guild id """
-        # await ctx.defer()  # defer response, now we have 15 minutes to reply
         # Get guild and user roles
         guild_id = str(ctx.guild.id)
         user_roles = extract_role_ids(ctx.message.author.roles)  # roles formatting needed to only keep the actual id
-        # print(user_roles)
+
         try:
             # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
-            # print(roles_list)
+
             # Check is user is allowed to use the database
             if any(str(role) in roles_list for role in user_roles):
                 if picture.content_type in ['image/png', 'image/jpeg']:
                     user_id = ctx.message.author.id
                     user_name = ctx.message.author.name
+
+                    # Query the database for template names and IDs
+                    templates = await self.bot.pool.fetch("""
+                                            SELECT template_id, template_name FROM Templates
+                                        """)
+
+                    if not templates:
+                        await ctx.send("No templates found in the database. Something is wrong...")
+                        return
+
+                    # Generate the dropdown options dynamically
+                    labels = [template['template_name'] for template in templates]
+                    values = [template['template_id'] for template in templates]
+
+                    # Create and send the dropdown for template selection
+                    view = MyView(labels, values)
+                    await ctx.send("Please select a template for your OC.", view=view)
+                    await view.wait()
+
+                    # Get the selected template ID from the dropdown
+                    template_id = int(view.value)
 
                     view = ColorPicker(bot=self.bot)
                     await ctx.send(view=view)
@@ -53,6 +73,19 @@ class OcManager(commands.Cog):
                     await ctx.send(f'You have picked {colour} for your OC!')
 
                     oc_picture = await picture.read()
+
+                    if template_id > 1:
+                        template_name = labels[template_id - 1]
+                        await ctx.send(f'You have selected the following template: {template_name}')  # since the template id starts from 1 but the list starts from 0
+
+                        template_name = scrub(template_name)  # just keep A-Z; a-z; 0-9
+                        # Query the database for template labels
+                        query = """SELECT * FROM {}""".format(template_name)
+                        template_labels = await self.bot.pool.fetch(query)  # one way to have dynamic table variable
+
+                        # Extract column names (labels)
+                        labels = [column['name'] for column in template_labels]
+
                     print(await self.bot.pool.execute("""
                         INSERT INTO characters (
                               user_id, guild_id, user_name, oc_name, oc_age, oc_nationality,
