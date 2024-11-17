@@ -11,6 +11,10 @@ class Artwork(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def thread_on_message(self, message):
+        # Checks if message actually exists (issues with form implementation)
+        if message.guild is None:
+            return
+
         # If the file exists, load the data from the file
         with open('channels.json', 'r') as f:
             channels_dict = json.load(f)
@@ -28,42 +32,27 @@ class Artwork(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def check_attachment(self, message):
-        try:
-            # If the message is a DM or not in a guild, ignore it
-            if message.guild is None:
-                return
+        # If the file exists, load the data from the file
+        with open('channels.json', 'r') as f:
+            channels_dict = json.load(f)
+        # Get the server ID
+        if message.guild is None:
+            return  # Skip processing for DMs or messages without a guild
 
-            # Load the channels data
-            try:
-                with open('channels.json', 'r') as f:
-                    channels_dict = json.load(f)
-            except FileNotFoundError:
-                print("channels.json file not found.")
-                return
-            except json.JSONDecodeError:
-                print("Error decoding channels.json file.")
-                return
+        if message.guild is None:
+            return
 
-            server_id = str(message.guild.id)
+        server_id = str(message.guild.id)
 
-            if server_id in channels_dict:
-                allowed_channels = channels_dict[server_id]
+        if server_id in channels_dict:
+            allowed_channels = channels_dict[server_id]
 
-                if (str(message.channel.id) in allowed_channels and
-                    len(message.attachments) == 0 and
-                    not message.author.guild_permissions.administrator):
-                    try:
-                        # Delete the message
-                        await message.delete()
-                        # Send a message to the user discreetly
-                        await message.author.send(f"You cannot send messages without attachments in {message.channel.mention}.")
-                    except discord.errors.NotFound:
-                        print(f"Message {message.id} was already deleted.")
-                    except discord.errors.Forbidden:
-                        print(f"Bot doesn't have permission to delete message {message.id} or DM user {message.author.id}")
-
-        except Exception as e:
-            print(f"An error occurred in check_attachment: {str(e)}")
+            if str(message.channel.id) in allowed_channels and len(message.attachments) == 0 and not message.author.guild_permissions.administrator:
+                # Delete the message
+                await message.delete()
+                # Send a message to the user discreetly
+                user = message.author
+                await user.send(f"You cannot send messages without attachments in {message.channel.mention}.")
 
 
 async def setup(bot):
