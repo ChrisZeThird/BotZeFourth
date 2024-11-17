@@ -86,13 +86,13 @@ class OcManager(commands.Cog):
                         # Extract column names (labels)
                         labels = [column['name'] for column in template_labels]
 
-                    print(await self.bot.pool.execute("""
-                        INSERT INTO characters (
-                              user_id, guild_id, user_name, oc_name, oc_age, oc_nationality,
-                              oc_gender, oc_sexuality, oc_universe, oc_story, oc_picture, oc_colour
-                            )  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
-                        """, user_id, guild_id, user_name, name, age, nationality, gender, sexuality, universe, desc, oc_picture, colour)
-                          )
+                    # print(await self.bot.pool.execute("""
+                    #     INSERT INTO characters (
+                    #           user_id, guild_id, user_name, oc_name, oc_age, oc_nationality,
+                    #           oc_gender, oc_sexuality, oc_universe, oc_story, oc_picture, oc_colour
+                    #         )  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    #     """, user_id, guild_id, user_name, name, age, nationality, gender, sexuality, universe, desc, oc_picture, colour)
+                    #       )
                     await ctx.send(f'Character successfully added for <@{user_id}>!')
                 else:
                     # The attachment is not a PNG or JPEG file

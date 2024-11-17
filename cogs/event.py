@@ -20,8 +20,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: CustomContext, err: Exception):
         # Define the target server and channel IDs
-        TARGET_GUILD_ID = 464553751030661120  # Replace with your Discord server (guild) ID
-        TARGET_CHANNEL_ID = 661219101770776611  # Replace with your target channel ID
+        TARGET_GUILD_ID = 1307424009163374653  # Replace with your Discord server (guild) ID
+        TARGET_CHANNEL_ID = 1307424995965931602  # Replace with your target channel ID
 
         if isinstance(err, errors.MissingRequiredArgument) or isinstance(err, errors.BadArgument):
             helper = str(ctx.invoked_subcommand) if ctx.invoked_subcommand else str(ctx.command)
@@ -39,8 +39,8 @@ class Events(commands.Cog):
             await ctx.send("There was an error processing the command ;-;")
 
         elif isinstance(err, errors.CommandInvokeError) or isinstance(err, errors.HybridCommandError):
-            # error = default.traceback_maker(err.original)
-            # print(default.traceback_maker(err))
+            error = default.traceback_maker(err.original)
+            print(default.traceback_maker(err))
             if "2000 or fewer" in str(err) and len(ctx.message.clean_content) > 1900:
                 return await ctx.send("\n".join([
                     "You attempted to make the command display more than 2,000 characters...",
