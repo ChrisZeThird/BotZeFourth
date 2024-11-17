@@ -29,6 +29,7 @@ class Help(commands.Cog):
                     description=command.help or "No description provided.",
                     color=0xff0000
                 )
+
                 embed.add_field(name="Usage", value=f"/{command.name} `{command.signature}`", inline=False)
                 await ctx.send(embed=embed)
             else:
