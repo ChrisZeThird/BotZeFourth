@@ -68,7 +68,7 @@ class OcManager(commands.Cog):
                 await ctx.send("**If you think you should be able to add a character to the database, contact your local admins.**")
 
         except KeyError:
-            await ctx.send("**Please set the authorized roles first with `addrole` before adding an OC.**")
+            await ctx.send("**Please ask an admin to set the authorized roles first with `addrole` before adding an OC.**")
 
     @commands.hybrid_command(name='ocdelete', with_app_command=True)
     async def ocdelete(self, ctx: CustomContext):
