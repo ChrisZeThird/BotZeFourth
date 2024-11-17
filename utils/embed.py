@@ -51,56 +51,149 @@ def init_embed(user_name,
 
 
 # -- DND EMBED TEMPLATE -- #
-def dnd_character_embed(character_data):
-    """
-    Create an embed for a D&D character sheet.
-    :param character_data: A dictionary containing character data
-    :return: A discord.Embed object
-    """
-    embed = discord.Embed(
-        title=f"{character_data['character_name']} - Level {character_data['level']} {character_data['class']}",
-        description=f"Background: {character_data['background']} | Species: {character_data['species']}\nSubclass: {character_data['subclass']}",
-        color=discord.Color.gold()
-    )
-    embed.set_thumbnail(url=character_data['oc_picture'])  # Artist avatar
+import discord
+from typing import Callable
 
-    # Basic stats
-    embed.add_field(name="**Basic Stats**",
-                    value=f"**AC**: {character_data['ac']}\n"
-                          f"**HP**: {character_data['current_hp']}/{character_data['max_hp']} (Temp: {character_data['temp_hp']})\n"
-                          f"**Initiative**: {character_data['initiative']}\n"
-                          f"**Speed**: {character_data['speed']} ft\n"
-                          f"**Proficiency Bonus**: {character_data['proficiency_bonus']}",
-                    inline=False)
 
-    # Abilities
-    embed.add_field(name="**Ability Scores**",
-                    value=f"**STR**: {character_data['strength']} ({character_data['str_mod']})\n"
-                          f"**DEX**: {character_data['dexterity']} ({character_data['dex_mod']})\n"
-                          f"**CON**: {character_data['constitution']} ({character_data['con_mod']})\n"
-                          f"**INT**: {character_data['intelligence']} ({character_data['int_mod']})\n"
-                          f"**WIS**: {character_data['wisdom']} ({character_data['wis_mod']})\n"
-                          f"**CHA**: {character_data['charisma']} ({character_data['cha_mod']})",
-                    inline=True)
+# Function to fetch DnD character details
+async def get_dnd_character_page(index: int, character_id: int):
+    # Fetch character data from the database
+    result = db.execute("""
+        SELECT * FROM DnDCharacters WHERE character_id = ?
+    """, (character_id,)).fetchone()
 
-    # Weapons, traits, and feats
-    embed.add_field(name="**Weapons & Damage**", value=character_data['weapons'], inline=False)
-    embed.add_field(name="**Species Traits**", value=character_data['species_traits'], inline=False)
-    embed.add_field(name="**Feats**", value=character_data['feats'], inline=False)
+    if not result:
+        return None, 0
 
-    # Equipment and other proficiencies
-    embed.add_field(name="**Equipment & Proficiencies**",
-                    value=f"**Armor**: {character_data['armor_training']}\n"
-                          f"**Weapons**: {character_data['weapon_training']}\n"
-                          f"**Tools**: {character_data['tools_training']}",
-                    inline=False)
+    # Extract details from the result
+    character_name = result['character_name']
+    class_name = result['class']
+    subclass = result['subclass']
+    species = result['species']
+    age = result['age']
+    gender = result['gender']
+    sexuality = result['sexuality']
+    background = result['background']
+    alignment = result['alignment']
+    lvl = result['lvl']
+    strength = result['strength']
+    dexterity = result['dexterity']
+    constitution = result['constitution']
+    intelligence = result['intelligence']
+    wisdom = result['wisdom']
+    charisma = result['charisma']
+    color = result['color']
+    oc_picture = result['oc_picture']
+    backstory = result['backstory']
+    appearance = result['appearance']
 
-    # Backstory and Appearance
-    embed.add_field(name="**Backstory**", value=character_data['backstory'], inline=False)
-    embed.add_field(name="**Appearance**", value=character_data['appearance'], inline=False)
+    # Paginate based on index
+    if index == 1:
+        embed = discord.Embed(
+            title=f"{character_name}'s DnD Character Sheet",
+            description=f"**Class**: {class_name}\n**Subclass**: {subclass}\n**Age**: {age}\n**Species**: {species}\n**Gender**: {gender}\n**Sexuality**: {sexuality}\n**Background**: {background}\n**Alignment**: {alignment}\n**Level**: {lvl}",
+            color=int(color, 16) if color else 0x3498db
+        )
+    elif index == 2:
+        embed = discord.Embed(
+            title=f"{character_name}'s Ability Scores",
+            description=(
+                f"**Strength**: {strength}\n**Dexterity**: {dexterity}\n"
+                f"**Constitution**: {constitution}\n**Intelligence**: {intelligence}\n"
+                f"**Wisdom**: {wisdom}\n**Charisma**: {charisma}"
+            ),
+            color=int(color, 16) if color else 0x3498db
+        )
+    elif index == 3:
+        embed = discord.Embed(
+            title=f"{character_name}'s Training and Weapons",
+            description=(
+                f"**Weapons**: {result['weapons']}\n**Armor Training**: {result['armor_training']}\n"
+                f"**Weapon Training**: {result['weapon_training']}\n**Tools Training**: {result['tools_training']}"
+            ),
+            color=int(color, 16) if color else 0x3498db
+        )
+    elif index == 4:
+        embed = discord.Embed(
+            title=f"{character_name}'s Saving Throws and Proficiencies",
+            description=(
+                f"**Proficiency Bonus**: {result['proficiency_bonus']}\n**Strength Save**: {result['strength_save']}\n"
+                f"**Dexterity Save**: {result['dexterity_save']}\n**Constitution Save**: {result['constitution_save']}\n"
+                f"**Intelligence Save**: {result['intelligence_save']}\n**Wisdom Save**: {result['wisdom_save']}\n"
+                f"**Charisma Save**: {result['charisma_save']}"
+            ),
+            color=int(color, 16) if color else 0x3498db
+        )
+    elif index == 5:
+        embed = discord.Embed(
+            title=f"{character_name}'s Backstory and Appearance",
+            description=(
+                f"**Backstory**: {backstory}\n**Appearance**: {appearance}"
+            ),
+            color=int(color, 16) if color else 0x3498db
+        )
+    elif index == 6:
+        embed = discord.Embed(
+            title=f"{character_name}'s Picture",
+            description="Here's a picture of the character.",
+            color=int(color, 16) if color else 0x3498db
+        )
+        embed.set_thumbnail(url=oc_picture)
 
-    # Footer
-    embed.set_footer(text=f"Character sheet created by {character_data['user_name']}")
+    # Set the total pages based on the amount of data (we assume 6 pages for now)
+    total_pages = 6
 
-    return embed
+    return embed, total_pages
 
+
+# Integration with Pagination View
+class DndPagination(discord.ui.View):
+    def __init__(self, interaction: discord.Interaction, character_id: int):
+        self.interaction = interaction
+        self.character_id = character_id
+        self.index = 1
+        super().__init__(timeout=100)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        else:
+            emb = discord.Embed(
+                description="Only the author of the command can perform this action.",
+                color=16711680
+            )
+            await interaction.response.send_message(embed=emb, ephemeral=True)
+            return False
+
+    async def edit_page(self, interaction: discord.Interaction):
+        emb, total_pages = await get_dnd_character_page(self.index, self.character_id)
+        self.update_buttons(total_pages)
+        await interaction.response.edit_message(embed=emb, view=self)
+
+    def update_buttons(self, total_pages: int):
+        self.children[0].disabled = self.index == 1
+        self.children[1].disabled = self.index == total_pages
+        self.children[2].disabled = total_pages <= 1
+
+    @discord.ui.button(emoji="◀️", style=discord.ButtonStyle.blurple)
+    async def previous(self, interaction: discord.Interaction, button: discord.Button):
+        self.index -= 1
+        await self.edit_page(interaction)
+
+    @discord.ui.button(emoji="▶️", style=discord.ButtonStyle.blurple)
+    async def next(self, interaction: discord.Interaction, button: discord.Button):
+        self.index += 1
+        await self.edit_page(interaction)
+
+    @discord.ui.button(emoji="⏭️", style=discord.ButtonStyle.blurple)
+    async def end(self, interaction: discord.Interaction, button: discord.Button):
+        self.index = 1 if self.index == 6 else 6
+        await self.edit_page(interaction)
+
+    async def on_timeout(self):
+        message = await self.interaction.original_response()
+        await message.edit(view=None)
+
+    @staticmethod
+    def compute_total_pages(total_results: int, results_per_page: int) -> int:
+        return ((total_results - 1) // results_per_page) + 1
