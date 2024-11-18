@@ -9,7 +9,7 @@ from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
 from utils.picker import ColorPicker, MyView
-from utils.form import FormModal
+from utils.form import DynamicFormModal, CompactAbilityModal
 
 
 class OcManager(commands.Cog):
@@ -45,7 +45,7 @@ class OcManager(commands.Cog):
                     "No roles have been allowed to use this command, contact your local admins if you think this is a mistake.")
                 return False
             else:
-                guild_roles_list = self.roles_dict[guild_id]
+                guild_roles_list = self.roles_dic[guild_id]
                 user_roles = extract_role_ids(
                     ctx.message.author.roles)  # roles formatting needed to only keep the actual id
 
@@ -59,7 +59,7 @@ class OcManager(commands.Cog):
         return commands.check(predicate)
 
     @commands.hybrid_command(name='ocadd', with_app_command=True)
-    @is_role_setup()
+    # @is_role_setup(roles_dic)
     async def ocadd(self, ctx, picture: discord.Attachment):
         """
         Add OC to the database with respect to user and guild id
@@ -74,12 +74,12 @@ class OcManager(commands.Cog):
                 return m.author == ctx.author
 
             # Select the Template
-            rows = await self.bot.pool.fetch("SELECT template_name FROM Templates;")
+            rows = await self.bot.pool.fetch('SELECT * FROM Templates')
             template_names = [row['template_name'] for row in rows]
 
             # Create an instance of the DropdownMenu view for the oc names
             template_selector = MyView(labels=template_names, values=template_names)
-            await ctx.send(content='**Select the OC to modify**', view=template_selector)
+            await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
             selected_template = template_selector.value
 
@@ -93,7 +93,7 @@ class OcManager(commands.Cog):
             if selected_template != "DnDCharacters":
                 user_fields = [field for field in user_fields if field not in self.exclude_fields]
                 field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
-
+                print("Basic Setup")
             else:
                 # Custom handling for DnDCharacters template
                 ability_scores = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
@@ -103,11 +103,25 @@ class OcManager(commands.Cog):
                 user_fields = [field for field in user_fields if field not in ability_scores + ability_modifiers + self.exclude_fields]
                 field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
 
+                print("DND setup")
+                ability_modal = CompactAbilityModal()
+                await ctx.send_modal(ability_modal)
+                await ability_modal.wait()  # Wait for the modal to complete
+                ability_data = ability_modal.ability_data
+
+            # Loop through chunks and display modals
+            collected_data = {}
+            for chunk in field_chunks:
+                modal = DynamicFormModal(title=f"{selected_template} Form", fields=chunk,
+                                         template_name=selected_template)
+                await ctx.send_modal(modal)
+                await modal.wait()  # Wait for the modal to complete
+                collected_data.update(modal.user_inputs)
+
+            await ctx.send(f"Collected data: {collected_data}")
+
             # Create instance of Modal to get user input for the OC as a form
             # TODO Button to confirm entry to then call for the next modal
-            # TODO Loop to create the form
-
-
 
 
             # Create instance of the ColorPicker DropdownMenu view
@@ -125,35 +139,35 @@ class OcManager(commands.Cog):
             # The attachment is not a PNG or JPEG file
             await ctx.send("Please attach a **PNG** or **JPEG** file.")
 
-    @commands.hybrid_command(name='ocdelete', with_app_command=True)
-    @is_role_setup()
-    async def ocdelete(self, ctx: CustomContext):
-        """ Delete an oc from the database """
-
-    @commands.hybrid_command(name='ocmodify', with_app_command=True)
-    @is_role_setup()
-    async def ocmodify(self, ctx: CustomContext):
-        """ Modify OC in the database with respect to user and guild id """
-
-    @commands.hybrid_command(name='oclist', with_app_command=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
-    async def oclist(self, ctx: CustomContext, artist_name):
-        """ List all oc of an artist """
-
-    @commands.hybrid_command(name='artistlist', with_app_command=True)
-    @commands.cooldown(1, 60, commands.BucketType.user)
-    async def artistlist(self, ctx: CustomContext):
-        """ List all artists of a server """
-
-    @commands.hybrid_command(name='ocrandom', with_app_command=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
-    async def ocrandom(self, ctx: CustomContext):
-        """ Send the description of a random selected OC """
-
-    @commands.hybrid_command(name='ocinfo', with_app_command=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
-    async def ocinfo(self, ctx: CustomContext, artist_name, oc_name):
-        """ Gives the information sheet of an OC """
+    # @commands.hybrid_command(name='ocdelete', with_app_command=True)
+    # @is_role_setup()
+    # async def ocdelete(self, ctx: CustomContext):
+    #     """ Delete an oc from the database """
+    #
+    # @commands.hybrid_command(name='ocmodify', with_app_command=True)
+    # @is_role_setup()
+    # async def ocmodify(self, ctx: CustomContext):
+    #     """ Modify OC in the database with respect to user and guild id """
+    #
+    # @commands.hybrid_command(name='oclist', with_app_command=True)
+    # @commands.cooldown(1, 30, commands.BucketType.user)
+    # async def oclist(self, ctx: CustomContext, artist_name):
+    #     """ List all oc of an artist """
+    #
+    # @commands.hybrid_command(name='artistlist', with_app_command=True)
+    # @commands.cooldown(1, 60, commands.BucketType.user)
+    # async def artistlist(self, ctx: CustomContext):
+    #     """ List all artists of a server """
+    #
+    # @commands.hybrid_command(name='ocrandom', with_app_command=True)
+    # @commands.cooldown(1, 30, commands.BucketType.user)
+    # async def ocrandom(self, ctx: CustomContext):
+    #     """ Send the description of a random selected OC """
+    #
+    # @commands.hybrid_command(name='ocinfo', with_app_command=True)
+    # @commands.cooldown(1, 30, commands.BucketType.user)
+    # async def ocinfo(self, ctx: CustomContext, artist_name, oc_name):
+    #     """ Gives the information sheet of an OC """
 
 
 async def setup(bot):

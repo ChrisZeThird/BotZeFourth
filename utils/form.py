@@ -1,12 +1,10 @@
 import discord
-from discord import app_commands
-from discord.ext import commands
-from discord import ui
+from discord import ui, Interaction, TextStyle
 
 from typing import List
 
 
-class FormModal(ui.Modal, title='User Information Form'):
+class DynamicFormModal(ui.Modal, title='User Information Form'):
     def __init__(self, title: str, fields: List[str], template_name: str):
         super().__init__(title=title)
         self.template_name = template_name
@@ -21,7 +19,7 @@ class FormModal(ui.Modal, title='User Information Form'):
                 )
             )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: Interaction):
         # Collect and store user input for each field
         for item in self.children:
             self.user_inputs[item.label] = item.value
@@ -33,3 +31,51 @@ class FormModal(ui.Modal, title='User Information Form'):
 
         # Return the collected data (could be passed to `ocadd` for further processing)
         return self.user_inputs
+
+
+class CompactAbilityModal(ui.Modal, title="Let's start with Ability **Scores and Modifiers**"):
+    def __init__(self, title: str):
+        super().__init__(title=title)
+        self.ability_data = {}
+        self.ability_scores = ui.TextInput(
+            label="Ability Scores",
+            placeholder="Enter scores in order: STR, DEX, CON, INT, WIS, CHA",
+            style=TextStyle.short
+        )
+        self.ability_modifiers = ui.TextInput(
+            label="Ability Modifiers",
+            placeholder="Enter modifiers in order: STR_MOD, DEX_MOD, CON_MOD, INT_MOD, WIS_MOD, CHA_MOD",
+            style=TextStyle.short
+        )
+
+    async def on_submit(self, interaction: Interaction):
+        # Parse the ability scores
+        try:
+            scores = list(map(int, self.ability_scores.value.split(',')))
+            modifiers = list(map(int, self.ability_modifiers.value.split(',')))
+
+            # Validate the number of entries
+            if len(scores) != 6 or len(modifiers) != 6:
+                raise ValueError("Invalid number of scores or modifiers provided.")
+        except ValueError as e:
+            await interaction.response.send_message(
+                f"Error: {e}\nPlease enter exactly 6 values for both scores and modifiers.",
+                ephemeral=True
+            )
+            return
+
+        # Process the valid data
+        self.ability_data = {
+            "strength": scores[0], "dexterity": scores[1], "constitution": scores[2],
+            "intelligence": scores[3], "wisdom": scores[4], "charisma": scores[5],
+            "str_mod": modifiers[0], "dex_mod": modifiers[1], "con_mod": modifiers[2],
+            "int_mod": modifiers[3], "wis_mod": modifiers[4], "cha_mod": modifiers[5],
+        }
+
+        # Acknowledge the submission and display the parsed data
+        await interaction.response.send_message(
+            f"Thanks for submitting! Here's what we got:\n{ability_data}",
+            ephemeral=True
+        )
+
+        return self.ability_data

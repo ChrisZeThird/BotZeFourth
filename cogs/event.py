@@ -19,35 +19,21 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: CustomContext, err: Exception):
-        # Define the target server and channel IDs
-        TARGET_GUILD_ID = 464553751030661120  # Replace with your Discord server (guild) ID
-        TARGET_CHANNEL_ID = 661219101770776611  # Replace with your target channel ID
-
         if isinstance(err, errors.MissingRequiredArgument) or isinstance(err, errors.BadArgument):
             helper = str(ctx.invoked_subcommand) if ctx.invoked_subcommand else str(ctx.command)
-            # Fetch the target channel
-            target_guild = self.bot.get_guild(TARGET_GUILD_ID)  # Replace `self.bot` with your bot's instance if needed
-            if target_guild:
-                target_channel = target_guild.get_channel(TARGET_CHANNEL_ID)
-                if not target_channel:
-                    target_channel = await target_guild.fetch_channel(TARGET_CHANNEL_ID)
+            await ctx.send_help(helper)
 
-                if target_channel:
-                    await target_channel.send(f"Error details: {helper}")
+        elif isinstance(err, errors.CommandInvokeError):
+            error = default.traceback_maker(err.original)
 
-            # Send a generic message to the current channel
-            await ctx.send("There was an error processing the command ;-;")
-
-        elif isinstance(err, errors.CommandInvokeError) or isinstance(err, errors.HybridCommandError):
-            # error = default.traceback_maker(err.original)
-            # print(default.traceback_maker(err))
             if "2000 or fewer" in str(err) and len(ctx.message.clean_content) > 1900:
                 return await ctx.send("\n".join([
                     "You attempted to make the command display more than 2,000 characters...",
                     "Both error and command will be ignored."
                 ]))
-
-            await ctx.send(f"There was an error processing the command ;-;")
+            helper = str(ctx.invoked_subcommand) if ctx.invoked_subcommand else str(ctx.command)
+            await ctx.send_help(helper)
+            await ctx.send(f"There was an error processing the command ;-;\n{error}")
 
         elif isinstance(err, errors.CheckFailure):
             pass
@@ -56,8 +42,7 @@ class Events(commands.Cog):
             await ctx.send("You've reached max capacity of command usage at once, please finish the previous one...")
 
         elif isinstance(err, errors.CommandOnCooldown):
-            cd: int = int(err.retry_after)
-            await ctx.send(f"This command is on cooldown... try again in {cd//86400}d {(cd//3600)%24}h {(cd//60)%60}m {cd % 60}.")
+            await ctx.send(f"This command is on cooldown... try again in {err.retry_after:.2f} seconds.")
 
         elif isinstance(err, errors.CommandNotFound):
             pass

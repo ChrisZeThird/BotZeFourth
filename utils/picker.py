@@ -61,8 +61,9 @@ class ColorPicker(discord.ui.View):
 
 
 class MySelectMenu(discord.ui.Select):
-    def __init__(self, labels, values):
+    def __init__(self, labels, values, modal):
         self.labels = labels
+        self.modal = modal
         options = []
         for label, value in zip(labels, values):
             options.append(discord.SelectOption(label=label, value=value))
@@ -70,11 +71,17 @@ class MySelectMenu(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.value = self.values[0]  # Save the selected value for later use
+        # TODO Fix modal interaction, need to send it after selecting in drop down menu
+        # TODO Add a checkpoint point to confirm to send next modal
+        if self.modal is None:
+            await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
+        else:
+            await interaction.response.send_modal(self.modal)
         self.view.stop()
 
 
 class MyView(discord.ui.View):
-    def __init__(self, labels, values):
+    def __init__(self, labels, values, modal=None):
         super().__init__()
         self.value = None
-        self.add_item(MySelectMenu(labels, values))
+        self.add_item(MySelectMenu(labels, values, modal))
