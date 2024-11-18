@@ -9,12 +9,14 @@ from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
 from utils.picker import ColorPicker, MyView
+from utils.form import FormModal
 
 
 class OcManager(commands.Cog):
     def __init__(self, bot):
         self.bot: DiscordBot = bot
         self.roles_dic = self.load_roles()
+        self.exclude_fields = ["picture_url", "color", "template_id"]
 
     def load_roles(self, file_path="roles.json"):
         """
@@ -81,11 +83,32 @@ class OcManager(commands.Cog):
             await template_selector.wait()  # continues after stop() or timeout
             selected_template = template_selector.value
 
+            # Retrieve columns for the selected template
+            query = f"PRAGMA table_info({selected_template})"
+            columns = await self.bot.pool.fetch(query)
+            column_names = [row['name'] for row in columns]
+
+            # Skip DB-related fields and chunk columns for modal fields
+            user_fields = column_names[2:]  # Assuming first 2 are DB info
+            if selected_template != "DnDCharacters":
+                user_fields = [field for field in user_fields if field not in self.exclude_fields]
+                field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
+
+            else:
+                # Custom handling for DnDCharacters template
+                ability_scores = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+                ability_modifiers = ["str_mod", "dex_mod", "con_mod", "int_mod", "wis_mod", "cha_mod"]
+
+                # Split fields into chunks of 5 for modals
+                user_fields = [field for field in user_fields if field not in ability_scores + ability_modifiers + self.exclude_fields]
+                field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
+
             # Create instance of Modal to get user input for the OC as a form
-            # Forms entries depends on the template used
-            # TODO Find a way to account for long template entry list to have different form
             # TODO Button to confirm entry to then call for the next modal
             # TODO Loop to create the form
+
+
+
 
             # Create instance of the ColorPicker DropdownMenu view
             view = ColorPicker(bot=self.bot)
