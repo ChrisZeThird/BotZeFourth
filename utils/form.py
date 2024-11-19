@@ -4,6 +4,17 @@ from discord import ui, Interaction, TextStyle
 from typing import List
 
 
+class MyModal(discord.ui.Modal):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.add_item(discord.ui.TextInput(label="Short Input"))
+        self.add_item(discord.ui.TextInput(label="Long Input", style=TextStyle.long))
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.send_message('Cool thanks!')
+
+
 class DynamicFormModal(ui.Modal, title='User Information Form'):
     def __init__(self, title: str, fields: List[str], template_name: str):
         super().__init__(title=title)
@@ -74,7 +85,7 @@ class CompactAbilityModal(ui.Modal, title="Let's start with Ability **Scores and
 
         # Acknowledge the submission and display the parsed data
         await interaction.response.send_message(
-            f"Thanks for submitting! Here's what we got:\n{ability_data}",
+            f"Thanks for submitting! Here's what we got:\n{self.ability_data}",
             ephemeral=True
         )
 

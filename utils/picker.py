@@ -1,6 +1,8 @@
 import asyncio
 import discord
 
+from utils.form import MyModal
+
 colors = {
         "red": "#FF0000",
         "blue": "#0000FF",
@@ -61,9 +63,8 @@ class ColorPicker(discord.ui.View):
 
 
 class MySelectMenu(discord.ui.Select):
-    def __init__(self, labels, values, modal):
+    def __init__(self, labels, values):
         self.labels = labels
-        self.modal = modal
         options = []
         for label, value in zip(labels, values):
             options.append(discord.SelectOption(label=label, value=value))
@@ -73,15 +74,25 @@ class MySelectMenu(discord.ui.Select):
         self.view.value = self.values[0]  # Save the selected value for later use
         # TODO Fix modal interaction, need to send it after selecting in drop down menu
         # TODO Add a checkpoint point to confirm to send next modal
-        if self.modal is None:
-            await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
-        else:
-            await interaction.response.send_modal(self.modal)
+        # await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
+        await interaction.response.send_modal(MyModal(title='Test'))
         self.view.stop()
 
 
 class MyView(discord.ui.View):
-    def __init__(self, labels, values, modal=None):
+    def __init__(self, labels, values):
         super().__init__()
         self.value = None
-        self.add_item(MySelectMenu(labels, values, modal))
+        self.add_item(MySelectMenu(labels, values))
+
+
+class ConfirmButton(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.confirmed = False
+
+    @discord.ui.button(label="Next Modal", style=discord.ButtonStyle.green)
+    async def next_modal(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.confirmed = True
+        await interaction.response.send_message("Selection confirmed, proceeding...", ephemeral=True)
+        self.stop()
