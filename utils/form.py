@@ -74,7 +74,7 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
             modifiers = list(map(int, ability_modifiers.split(',')))
 
             # Process the valid data
-            ability_data = {
+            self.user_inputs = {
                 "strength": scores[0], "dexterity": scores[1], "constitution": scores[2],
                 "intelligence": scores[3], "wisdom": scores[4], "charisma": scores[5],
                 "str_mod": modifiers[0], "dex_mod": modifiers[1], "con_mod": modifiers[2],
@@ -84,12 +84,12 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
             # Create a formatted string
             formatted_data = (
                 f"**Attributes:**\n"
-                f"- Strength: {ability_data['strength']} (Modifier: {ability_data['str_mod']})\n"
-                f"- Dexterity: {ability_data['dexterity']} (Modifier: {ability_data['dex_mod']})\n"
-                f"- Constitution: {ability_data['constitution']} (Modifier: {ability_data['con_mod']})\n"
-                f"- Intelligence: {ability_data['intelligence']} (Modifier: {ability_data['int_mod']})\n"
-                f"- Wisdom: {ability_data['wisdom']} (Modifier: {ability_data['wis_mod']})\n"
-                f"- Charisma: {ability_data['charisma']} (Modifier: {ability_data['cha_mod']})"
+                f"- Strength: {self.user_inputs['strength']} (Modifier: {self.user_inputs['str_mod']})\n"
+                f"- Dexterity: {self.user_inputs['dexterity']} (Modifier: {self.user_inputs['dex_mod']})\n"
+                f"- Constitution: {self.user_inputs['constitution']} (Modifier: {self.user_inputs['con_mod']})\n"
+                f"- Intelligence: {self.user_inputs['intelligence']} (Modifier: {self.user_inputs['int_mod']})\n"
+                f"- Wisdom: {self.user_inputs['wisdom']} (Modifier: {self.user_inputs['wis_mod']})\n"
+                f"- Charisma: {self.user_inputs['charisma']} (Modifier: {self.user_inputs['cha_mod']})"
             )
 
             await interaction.response.send_message(f'Characters information successfully saved!\n{formatted_data}',

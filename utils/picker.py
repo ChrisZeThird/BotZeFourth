@@ -122,10 +122,6 @@ class MySelectMenu(discord.ui.Select):
         self.data_to_store.append(modal.user_inputs)
 
         chunk_number = len(field_chunks)
-
-        print(self.data_to_store)
-        print("--------0-----------")
-        index = 1
         for index in range(1, chunk_number):
             temp_data_to_store = self.data_to_store
             # Create and send the modal
@@ -147,9 +143,6 @@ class MySelectMenu(discord.ui.Select):
             await followup_modal.wait()
 
             self.data_to_store.append(followup_modal.user_inputs)
-
-        # # Use the new interaction from the button to send the next modal
-        # index += 1  # Move to the next chunk
 
         # Send extra ability modal if DnDCharacters is selected
         if template_name == 'DnDCharacters':

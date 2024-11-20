@@ -75,8 +75,8 @@ class OcManager(commands.Cog):
             color_view = ColorPicker(bot=self.bot)
             await ctx.send(view=color_view)
             await color_view.wait()
-            colour = color_view.colour
-            await ctx.send(f'You have picked {colour} for your OC!')
+            color = color_view.colour
+            await ctx.send(f'You have picked {color} for your OC!')
 
             # Select the Template
             rows = await self.bot.pool.fetch('SELECT * FROM Templates')
@@ -85,12 +85,33 @@ class OcManager(commands.Cog):
             template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
             await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
-            data = template_selector.data_to_store
-            print('data:', data)
-            # COMMAND STOPS HERE IF THERE WAS AN ERROR IN THE MODAL INPUTS
 
+            template = template_selector.value
+            # Get data to store
+            data = template_selector.data_to_store
             # Prepare the picture to be stored in the database
             oc_picture = await picture.read()
+            # Consolidate the list of dictionaries into a single dictionary
+            consolidated_data = {}
+            for entry in data:
+                consolidated_data.update(entry)
+            consolidated_data.update({'user_id': user_id,
+                                      'picture_url': oc_picture,
+                                      'color': color})
+
+            print(consolidated_data)
+            # Fetch the template's column names and values to store
+            columns = list(consolidated_data.keys())
+            values = list(consolidated_data.values())
+            print(values)
+            # Create placeholders for SQL query (e.g., '?, ?, ?, ...')
+            placeholders = ', '.join(['?'] * len(columns))
+            # Construct the query string dynamically
+            query = f"INSERT INTO {template} ({', '.join(columns)}) VALUES ({placeholders})"
+            print(query)
+            # Execute the query
+            print(await self.bot.pool.execute(query, *values))
+            await ctx.send(f'Character successfully added for <@{user_id}>!')
 
         else:
             # The attachment is not a PNG or JPEG file
