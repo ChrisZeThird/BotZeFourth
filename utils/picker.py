@@ -168,7 +168,6 @@ class MySelectMenu(discord.ui.Select):
             self.data_to_store.append(ability_modal.user_inputs)
 
 
-
 class MyView(discord.ui.View):
     def __init__(self, labels, values, bot):
         super().__init__()

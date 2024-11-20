@@ -81,7 +81,18 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
                 "int_mod": modifiers[3], "wis_mod": modifiers[4], "cha_mod": modifiers[5],
             }
 
-            await interaction.response.send_message(f'Characters information successfully saved!\n{ability_data}',
+            # Create a formatted string
+            formatted_data = (
+                f"**Attributes:**\n"
+                f"- Strength: {ability_data['strength']} (Modifier: {ability_data['str_mod']})\n"
+                f"- Dexterity: {ability_data['dexterity']} (Modifier: {ability_data['dex_mod']})\n"
+                f"- Constitution: {ability_data['constitution']} (Modifier: {ability_data['con_mod']})\n"
+                f"- Intelligence: {ability_data['intelligence']} (Modifier: {ability_data['int_mod']})\n"
+                f"- Wisdom: {ability_data['wisdom']} (Modifier: {ability_data['wis_mod']})\n"
+                f"- Charisma: {ability_data['charisma']} (Modifier: {ability_data['cha_mod']})"
+            )
+
+            await interaction.response.send_message(f'Characters information successfully saved!\n{formatted_data}',
                                                     ephemeral=True)
             self.stop()  # Stop the modal to allow the next modal to be sent
 
