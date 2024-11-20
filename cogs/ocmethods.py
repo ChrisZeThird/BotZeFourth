@@ -161,7 +161,6 @@ class OcManager(commands.Cog):
                 return
 
             template_name = await self.selectTemplate()
-            print('reached template_name')
             # Fetch all OCs for the user across all templates
             all_ocs = []
             for table in template_name:
@@ -172,8 +171,6 @@ class OcManager(commands.Cog):
             if not all_ocs:
                 await ctx.send("You have no OCs in the database to delete.")
                 return
-            print(all_ocs)
-            print("reached dropdown")
             # Display dropdown to select OC
             oc_delete_view = MyView(labels=all_ocs, values=all_ocs, bot=self.bot, use_modal=False)
             await ctx.send(content="**Select the OC to delete**:", view=oc_delete_view)
@@ -181,7 +178,6 @@ class OcManager(commands.Cog):
 
             if oc_delete_view.value:
                 selected_oc = oc_delete_view.value
-                print('reach oc deletion process')
                 # Delete the selected OC from the appropriate table
                 for table in template_name:
                     query = f'DELETE FROM {table} WHERE character_name = ? AND user_id = ?'
@@ -198,11 +194,59 @@ class OcManager(commands.Cog):
         except KeyError:
             await ctx.send("Roles for this server have not been set. Please use the `addrole` command first.")
 
-    # @commands.hybrid_command(name='ocmodify', with_app_command=True)
-    # @is_role_setup()
-    # async def ocmodify(self, ctx: CustomContext):
-    #     """ Modify OC in the database with respect to user and guild id """
-    #
+    @commands.hybrid_command(name='ocmodify', with_app_command=True)
+    async def ocmodify(self, ctx: CustomContext):
+        """ Modify OC in the database with respect to user and guild id """
+        """ Delete an oc from the database """
+        # Get guild and user role
+        guild_id = str(ctx.guild.id)
+        user_roles = extract_role_ids(ctx.author.roles)  # Helper function to get role IDs
+        user_id = ctx.author.id
+
+        # Load roles from JSON (assume `open_json()` loads `roles.json`)
+        self.roles_dict = open_json()
+
+        try:
+            # Check if permissions have been set for the server
+            roles_list = self.roles_dict[guild_id]
+            # Verify if the user is allowed to access the database
+            if not any(str(role) in roles_list for role in user_roles):
+                await ctx.send("You do not have permission to access the database.")
+                return
+
+            matching_ids = await self.find_matching_id(guild_id)
+
+            if str(user_id) not in matching_ids:
+                await ctx.send("You have no characters registered in the database.")
+                return
+
+            template_name = await self.selectTemplate()
+            # Fetch all OCs for the user across all templates
+            all_ocs = []
+            for table in template_name:
+                ocs = await self.bot.pool.fetch(
+                    f'SELECT character_name FROM {table} WHERE user_id = $1 AND guild_id = $2',
+                    str(user_id), guild_id)
+                all_ocs.extend([row['character_name'] for row in ocs])
+
+            if not all_ocs:
+                await ctx.send("You have no OCs in the database to delete.")
+                return
+            # Display dropdown to select OC
+            oc_modify = MyView(labels=all_ocs, values=all_ocs, bot=self.bot, use_modal=False)
+            await ctx.send(content="**Select the OC to delete**:", view=oc_modify)
+            await oc_modify.wait()  # Wait for the user to make a selection
+
+            if oc_modify.value:
+                selected_oc = oc_modify.value
+                # TODO Modal logic implementation
+
+            else:
+                await ctx.send("You did not select an OC for deletion.")
+
+        except KeyError:
+            await ctx.send("Roles for this server have not been set. Please use the `addrole` command first.")
+
     @commands.hybrid_command(name='oclist', with_app_command=True)
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def oclist(self, ctx: CustomContext):
