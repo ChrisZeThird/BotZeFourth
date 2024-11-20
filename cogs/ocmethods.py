@@ -8,7 +8,7 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
-from utils.picker import ColorPicker, MyView, ConfirmButton
+from utils.picker import ColorPicker, MyView
 
 
 class OcManager(commands.Cog):

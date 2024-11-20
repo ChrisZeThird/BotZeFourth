@@ -42,7 +42,7 @@ class DynamicFormModal(ui.Modal, title='Placeholder'):
             formatted_output,
             ephemeral=True
         )
-
+        self.stop()  # Stop the modal to allow the next modal to be sent
         # Return the collected data (could be passed to `ocadd` for further processing)
         return self.user_inputs
 

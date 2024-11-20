@@ -105,12 +105,40 @@ class MySelectMenu(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.value = self.values[0]  # Save the selected value for later use
-        # await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
         field_chunks = await self.select_template(self.view.value)
-        modal = DynamicFormModal(title='Character Creation', fields=field_chunks[0], template_name=self.view.value)
+
+        # Send the first modal
+        await self.loop_through_modals(interaction, field_chunks, self.view.value)
+
+        self.view.stop()
+
+    async def loop_through_modals(self, interaction: discord.Interaction, field_chunks, template_name):
+        # Create Modal object
+        modal = DynamicFormModal(title='Character Creation', fields=field_chunks[0], template_name=template_name)
         await interaction.response.send_modal(modal)
         await modal.wait()
-        self.view.stop()
+
+        index = 1
+        while index < len(field_chunks):
+            # Create and send the modal
+            followup_modal = DynamicFormModal(
+                title=f'Character Creation (Step {index}/{len(field_chunks)})',
+                fields=field_chunks[index],
+                template_name=template_name
+            )
+
+            # Send the confirmation button
+            view = NextModalButton(followup_modal)
+            await interaction.followup.send(
+                content=f"Step {index + 1} out of {len(field_chunks)}. Please click 'Next' to continue.",
+                view=view,
+                ephemeral=True  # Optionally make it ephemeral
+            )
+
+            await view.wait()  # Wait for the confirmation button to be clicked
+
+            # Use the new interaction from the button to send the next modal
+            index += 1  # Move to the next chunk
 
 
 class MyView(discord.ui.View):
@@ -120,13 +148,13 @@ class MyView(discord.ui.View):
         self.add_item(MySelectMenu(labels, values, bot=bot))
 
 
-class ConfirmButton(discord.ui.View):
-    def __init__(self):
+class NextModalButton(discord.ui.View):
+    def __init__(self, modal):
         super().__init__()
-        self.confirmed = False
+        self.next_interaction = None
+        self.modal = modal
 
-    @discord.ui.button(label="Next Modal", style=discord.ButtonStyle.green)
-    async def next_modal(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.confirmed = True
-        await interaction.response.send_message("Selection confirmed, proceeding...", ephemeral=True)
-        self.stop()
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary)
+    async def next_button(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+        await button_interaction.response.send_modal(self.modal)
+        self.stop()  # Stop the view to continue
