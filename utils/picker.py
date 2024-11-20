@@ -110,8 +110,6 @@ class MySelectMenu(discord.ui.Select):
         # Send the first modal
         await self.loop_through_modals(interaction, field_chunks, self.view.value)
 
-        self.view.stop()
-
     async def loop_through_modals(self, interaction: discord.Interaction, field_chunks, template_name):
         # Create Modal object
         modal = DynamicFormModal(title='Character Creation', fields=field_chunks[0], template_name=template_name)
@@ -148,12 +146,13 @@ class MySelectMenu(discord.ui.Select):
             # Send the confirmation button
             view = NextModalButton(ability_modal)
             await interaction.followup.send(
-                content=f"Extra step. Please click 'Finish' to continue.",
+                content=f"Extra step. Please click 'Next' to continue.",
                 view=view,
                 ephemeral=True  # Optionally make it ephemeral
             )
 
             await view.wait()  # Wait for the confirmation button to be clicked
+
 
 
 class MyView(discord.ui.View):

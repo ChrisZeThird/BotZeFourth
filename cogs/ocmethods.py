@@ -58,7 +58,6 @@ class OcManager(commands.Cog):
         return commands.check(predicate)
 
     @commands.hybrid_command(name='ocadd', with_app_command=True)
-    # @is_role_setup(roles_dic)
     async def ocadd(self, ctx, picture: discord.Attachment):
         """
         Add OC to the database with respect to user and guild id
@@ -72,22 +71,22 @@ class OcManager(commands.Cog):
             def check(m):
                 return m.author == ctx.author
 
+            # Create instance of the ColorPicker DropdownMenu view
+            color_view = ColorPicker(bot=self.bot)
+            await ctx.send(view=color_view)
+            await color_view.wait()
+            colour = color_view.colour
+            await ctx.send(f'You have picked {colour} for your OC!')
+
             # Select the Template
             rows = await self.bot.pool.fetch('SELECT * FROM Templates')
             template_names = [row['template_name'] for row in rows]
-
             # Create an instance of the DropdownMenu view for the oc names
             template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
             await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
-
-            # Create instance of the ColorPicker DropdownMenu view
-            view = ColorPicker(bot=self.bot)
-            await ctx.send(view=view)
-            await view.wait()
-
-            colour = view.colour
-            await ctx.send(f'You have picked {colour} for your OC!')
+            template_selector.stop()
+            # COMMAND STOPS HERE IF THERE WAS AN ERROR IN THE MODAL INPUTS
 
             # Prepare the picture to be stored in the database
             oc_picture = await picture.read()
