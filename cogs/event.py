@@ -92,16 +92,7 @@ class Events(commands.Cog):
 
         # Indicate that the bot has successfully booted up
         print(f"Ready: {self.bot.user} | Servers: {len(self.bot.guilds)}")
-        # print('Server ID: 'self.bot.guilds)
-        # guild_dic = {}
 
-        # for guild in self.bot.guilds:
-        #     text_channel_list = []
-        #     for channel in guild.channels:
-        #         if str(channel.type) == 'text':
-        #             text_channel_list.append((channel.id, channel.name))
-        #     guild_dic[str(guild.name)] = text_channel_list
-        # print(guild_dic["J-Productions's server"])
 
 
 async def setup(bot):

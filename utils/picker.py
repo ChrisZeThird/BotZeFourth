@@ -62,6 +62,23 @@ class ColorPicker(discord.ui.View):
         self.stop()
 
 
+class ClassicSelectMenu(discord.ui.Select):
+    def __init__(self, labels, values, bot):
+        self.bot = bot
+        self.labels = labels
+        self.data_to_store = None
+        options = []
+        for label, value in zip(labels, values):
+            options.append(discord.SelectOption(label=label, value=value))
+        super().__init__(placeholder='Select an option...', min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.view.value = self.values[0]  # Save the selected value for later use
+        # Acknowledge the interaction to avoid the "interaction failed" error
+        await interaction.response.send_message(f"Selection registered", ephemeral=True)
+        self.view.stop()
+
+
 class MySelectMenu(discord.ui.Select):
     def __init__(self, labels, values, bot):
         self.bot = bot
@@ -85,8 +102,8 @@ class MySelectMenu(discord.ui.Select):
         column_names = [row['name'] for row in columns]
 
         # Skip DB-related fields and chunk columns for modal fields
-        user_fields = column_names[:2]  # Assuming first 2 are DB info
-        character_fields = column_names[2:]
+        user_fields = column_names[:3]  # Assuming first 3 are DB info (user_id, autoincrement id and guild_id
+        character_fields = column_names[3:]
         exclude_fields = ["picture_url", "color", "template_id"]
 
         if value == 'DnDCharacters':
@@ -162,10 +179,13 @@ class MySelectMenu(discord.ui.Select):
 
 
 class MyView(discord.ui.View):
-    def __init__(self, labels, values, bot):
+    def __init__(self, labels, values, bot, use_modal=True):
         super().__init__()
         self.value = None
-        self.select_menu = MySelectMenu(labels, values, bot=bot)
+        if use_modal:
+            self.select_menu = MySelectMenu(labels, values, bot=bot)
+        else:
+            self.select_menu = ClassicSelectMenu(labels, values, bot=bot)
         self.add_item(self.select_menu)
 
     @property
@@ -183,3 +203,5 @@ class NextModalButton(discord.ui.View):
     async def next_button(self, button_interaction: discord.Interaction, button: discord.ui.Button):
         await button_interaction.response.send_modal(self.modal)
         self.stop()  # Stop the view to continue
+
+

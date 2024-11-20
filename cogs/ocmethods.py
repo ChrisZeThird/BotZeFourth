@@ -68,6 +68,7 @@ class OcManager(commands.Cog):
                     for entry in data:
                         consolidated_data.update(entry)
                     consolidated_data.update({'user_id': user_id,
+                                              'guild_id': guild_id,
                                               'picture_url': oc_picture,
                                               'color': color})
 
@@ -120,8 +121,72 @@ class OcManager(commands.Cog):
     @commands.hybrid_command(name='oclist', with_app_command=True)
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def oclist(self, ctx: CustomContext):
-        """ List all oc of an artist """
+        """ List all oc of an artist for the current server """
+        guild_id = str(ctx.guild.id)
 
+        # Step 1: Get all the template names from the Templates table
+        rows = await self.bot.pool.fetch('SELECT template_name FROM Templates')
+        table_names = [row['template_name'] for row in rows]
+
+        # Step 2: Find user_ids from all tables where guild_id matches the current guild
+        matching_user_ids = set()
+        for table_name in table_names:
+            query = f'SELECT DISTINCT user_id FROM {table_name} WHERE guild_id = $1'
+            result = await self.bot.pool.fetch(query, guild_id)
+            matching_user_ids.update(row['user_id'] for row in result)
+
+        # If there are no matching users
+        if not matching_user_ids:
+            await ctx.send("No users found with the current guild.")
+            return
+
+        else:
+            # Step 3: Fetch usernames for the matching user_ids
+            print(matching_user_ids)
+            user_names = []
+            for user_id in matching_user_ids:
+                user = await self.bot.fetch_user(user_id)
+                user_names.append(user.name if user else f"Unknown User ({user_id})")
+
+            print(user_names)
+            # Send the list of matching user_ids (or process them further as needed)
+            artist_selector = MyView(labels=user_names, values=matching_user_ids, bot=self.bot, use_modal=False)
+            await ctx.send(content='**Select the artist**', view=artist_selector)
+            await artist_selector.wait()  # continues after stop() or timeout
+
+            artist_id = artist_selector.value
+            print(artist_id)
+
+            # Construct the query string dynamically
+            try:
+                # Step 1: Get all the table names from the TEMPLATE table
+                rows = await self.bot.pool.fetch('SELECT template_name FROM Templates')
+                table_names = [row['template_name'] for row in rows]
+
+                # Step 2: For each table name, fetch the OC names for the given artist_id
+                oc_names = []
+                for table_name in table_names:
+                    query = f'SELECT character_name FROM {table_name} WHERE user_id = $1'
+                    result = await self.bot.pool.fetch(query, artist_id)
+                    oc_names.extend([row['character_name'] for row in result])
+
+                # Step 3: Return the result
+                if oc_names:
+                    embed = discord.Embed(
+                        title=f"OC List for {self.bot.get_user(int(artist_id))}",
+                        description="\n".join(oc_names),
+                        color=discord.Colour.dark_embed()
+                    )
+                    await ctx.send(embed=embed)
+                else:
+                    await ctx.send(f"No OC names found for artist {self.bot.get_user(int(artist_id))}.")
+
+            except Exception as e:
+                await ctx.send(f"An error occurred: {str(e)}")
+
+            # query = f"FROM INTO {template} ({', '.join(columns)}) VALUES ({placeholders})"
+            # # Execute the query
+            # print(await self.bot.pool.execute(query, *values))
 
     #
     # @commands.hybrid_command(name='artistlist', with_app_command=True)
