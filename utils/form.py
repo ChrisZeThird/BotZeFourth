@@ -4,7 +4,7 @@ from discord import ui, Interaction, TextStyle
 from typing import List
 
 
-class MyModal(discord.ui.Modal):
+class OCModal(discord.ui.Modal):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -15,7 +15,7 @@ class MyModal(discord.ui.Modal):
         await interaction.response.send_message('Cool thanks!', ephemeral=True)
 
 
-class DynamicFormModal(ui.Modal, title='User Information Form'):
+class DynamicFormModal(ui.Modal, title='Placeholder'):
     def __init__(self, title: str, fields: List[str], template_name: str):
         super().__init__(title=title)
         self.template_name = template_name
@@ -35,58 +35,67 @@ class DynamicFormModal(ui.Modal, title='User Information Form'):
         for item in self.children:
             self.user_inputs[item.label] = item.value
 
+        formatted_output = f"Form for template `{self.template_name}` submitted! Data: : " + "; ".join(
+            [f"`{key}`: {value}" for key, value in self.user_inputs.items()]
+        )
         await interaction.response.send_message(
-            f"Form for template `{self.template_name}` submitted! Data: {self.user_inputs}",
+            formatted_output,
             ephemeral=True
         )
-
+        self.stop()  # Stop the modal to allow the next modal to be sent
         # Return the collected data (could be passed to `ocadd` for further processing)
         return self.user_inputs
 
 
-class CompactAbilityModal(ui.Modal, title="Let's start with Ability **Scores and Modifiers**"):
+class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
     def __init__(self, title: str):
         super().__init__(title=title)
-        self.ability_data = {}
-        self.ability_scores = ui.TextInput(
+        self.user_inputs = {}
+        self.add_item(ui.TextInput(
             label="Ability Scores",
             placeholder="Enter scores in order: STR, DEX, CON, INT, WIS, CHA",
-            style=TextStyle.short
-        )
-        self.ability_modifiers = ui.TextInput(
+            style=TextStyle.long
+        ))
+        self.add_item(ui.TextInput(
             label="Ability Modifiers",
             placeholder="Enter modifiers in order: STR_MOD, DEX_MOD, CON_MOD, INT_MOD, WIS_MOD, CHA_MOD",
-            style=TextStyle.short
-        )
+            style=TextStyle.long
+        ))
 
     async def on_submit(self, interaction: Interaction):
-        # Parse the ability scores
+        # Collect and store user input for each field
+        for item in self.children:
+            self.user_inputs[item.label] = item.value
+
+        # Process the input for Ability Scores and Modifiers
         try:
-            scores = list(map(int, self.ability_scores.value.split(',')))
-            modifiers = list(map(int, self.ability_modifiers.value.split(',')))
+            ability_scores = self.user_inputs.get("Ability Scores")
+            ability_modifiers = self.user_inputs.get("Ability Modifiers")
+
+            scores = list(map(int, ability_scores.split(',')))
+            modifiers = list(map(int, ability_modifiers.split(',')))
 
             # Validate the number of entries
             if len(scores) != 6 or len(modifiers) != 6:
                 raise ValueError("Invalid number of scores or modifiers provided.")
+
         except ValueError as e:
             await interaction.response.send_message(
-                f"Error: {e}\nPlease enter exactly 6 values for both scores and modifiers.",
+                f"Error: {e}\nPlease enter exactly 6 values for both scores and modifiers as shown in the placeholder.",
                 ephemeral=True
             )
             return
 
         # Process the valid data
-        self.ability_data = {
+        ability_data = {
             "strength": scores[0], "dexterity": scores[1], "constitution": scores[2],
             "intelligence": scores[3], "wisdom": scores[4], "charisma": scores[5],
             "str_mod": modifiers[0], "dex_mod": modifiers[1], "con_mod": modifiers[2],
             "int_mod": modifiers[3], "wis_mod": modifiers[4], "cha_mod": modifiers[5],
         }
 
-        # Acknowledge the submission and display the parsed data
-        await interaction.response.send_message(
-            f"Thanks for submitting! Here's what we got:\n{self.ability_data}",
-            ephemeral=True
-        )
+        await interaction.response.send_message(f'Characters information successfully saved!\n{ability_data}', ephemeral=True)
+        self.stop()  # Stop the modal to allow the next modal to be sent
 
-        return self.ability_data
+        return ability_data
+
