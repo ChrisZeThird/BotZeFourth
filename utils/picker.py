@@ -63,7 +63,8 @@ class ColorPicker(discord.ui.View):
 
 
 class MySelectMenu(discord.ui.Select):
-    def __init__(self, labels, values):
+    def __init__(self, labels, values, bot):
+        self.bot = bot
         self.labels = labels
         options = []
         for label, value in zip(labels, values):
@@ -71,7 +72,7 @@ class MySelectMenu(discord.ui.Select):
         super().__init__(placeholder='Select an option...', min_values=1, max_values=1, options=options)
 
     # From value creates Modal fields
-    def select_template(self, value):
+    async def select_template(self, value):
         """
         Retrieve columns for the selected value to parse as arguments in the modal class
         :param value: Table name, str
@@ -105,16 +106,16 @@ class MySelectMenu(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         self.view.value = self.values[0]  # Save the selected value for later use
         # await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
-        field_chunks = self.select_template(self.view.value)
-        await interaction.response.send_modal(DynamicFormModal(title='Character Creation', fields=field_chunks[0]))
+        field_chunks = await self.select_template(self.view.value)
+        await interaction.response.send_modal(DynamicFormModal(title='Character Creation', fields=field_chunks[0], template_name=self.view.value))
         self.view.stop()
 
 
 class MyView(discord.ui.View):
-    def __init__(self, labels, values):
+    def __init__(self, labels, values, bot):
         super().__init__()
         self.value = None
-        self.add_item(MySelectMenu(labels, values))
+        self.add_item(MySelectMenu(labels, values, bot=bot))
 
 
 class ConfirmButton(discord.ui.View):

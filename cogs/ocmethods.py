@@ -9,7 +9,6 @@ from utils.default import CustomContext
 from utils.embed import init_embed
 from utils.misc import extract_role_ids
 from utils.picker import ColorPicker, MyView, ConfirmButton
-from utils.form import DynamicFormModal, CompactAbilityModal, MyModal
 
 
 class OcManager(commands.Cog):
@@ -78,49 +77,9 @@ class OcManager(commands.Cog):
             template_names = [row['template_name'] for row in rows]
 
             # Create an instance of the DropdownMenu view for the oc names
-            template_selector = MyView(labels=template_names, values=template_names)
+            template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
             await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
-            selected_template = template_selector.value
-
-            # Retrieve columns for the selected template
-            query = f"PRAGMA table_info({selected_template})"
-            columns = await self.bot.pool.fetch(query)
-            column_names = [row['name'] for row in columns]
-
-            # Skip DB-related fields and chunk columns for modal fields
-            user_fields = column_names[2:]  # Assuming first 2 are DB info
-            if selected_template != "DnDCharacters":
-                user_fields = [field for field in user_fields if field not in self.exclude_fields]
-                field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
-
-            else:
-                # Custom handling for DnDCharacters template
-                ability_scores = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
-                ability_modifiers = ["str_mod", "dex_mod", "con_mod", "int_mod", "wis_mod", "cha_mod"]
-
-                # Split fields into chunks of 5 for modals
-                user_fields = [field for field in user_fields if field not in ability_scores + ability_modifiers + self.exclude_fields]
-                field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)] + ability_scores + ability_modifiers
-                print("DND setup")
-                ability_modal = CompactAbilityModal()
-                await ctx.send_modal(ability_modal)
-                await ability_modal.wait()  # Wait for the modal to complete
-                ability_data = ability_modal.ability_data
-            print(f"Field chunks for modal: {field_chunks}")
-
-            # Loop through chunks and display modals
-            # collected_data = {}
-            # for chunk in field_chunks:
-            #     modal = DynamicFormModal(title=f"{selected_template} Form", fields=chunk,
-            #                              template_name=selected_template)
-            #     await ctx.send_modal(modal)
-            #     # await modal.wait()  # Wait for the modal to complete
-            #     collected_data.update(modal.user_inputs)
-            #
-            # await ctx.send(f"Collected data: {collected_data}")
-
-            # Create instance of Modal to get user input for the OC as a form
 
             # Create instance of the ColorPicker DropdownMenu view
             view = ColorPicker(bot=self.bot)
