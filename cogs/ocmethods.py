@@ -85,7 +85,8 @@ class OcManager(commands.Cog):
             template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
             await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
-            template_selector.stop()
+            data = template_selector.data_to_store
+            print('data:', data)
             # COMMAND STOPS HERE IF THERE WAS AN ERROR IN THE MODAL INPUTS
 
             # Prepare the picture to be stored in the database

@@ -43,8 +43,6 @@ class DynamicFormModal(ui.Modal, title='Placeholder'):
             ephemeral=True
         )
         self.stop()  # Stop the modal to allow the next modal to be sent
-        # Return the collected data (could be passed to `ocadd` for further processing)
-        return self.user_inputs
 
 
 class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
@@ -86,8 +84,6 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
             await interaction.response.send_message(f'Characters information successfully saved!\n{ability_data}',
                                                     ephemeral=True)
             self.stop()  # Stop the modal to allow the next modal to be sent
-
-            return ability_data
 
         except ValueError as e:
             await interaction.response.send_message(
