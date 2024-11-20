@@ -1,4 +1,6 @@
 import re
+import os
+import json
 
 
 def ordinal_suffix(n):
@@ -34,3 +36,11 @@ def scrub(table_name):
     :return: clean name
     """
     return ''.join(chr for chr in table_name if chr.isalnum())
+
+
+def open_json(path='roles.json'):
+    """Helper function to load roles data"""
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+    return {}
