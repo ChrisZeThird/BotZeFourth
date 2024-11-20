@@ -4,7 +4,7 @@ from discord import ui, Interaction, TextStyle
 from typing import List
 
 
-class MyModal(discord.ui.Modal):
+class OCModal(discord.ui.Modal):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -15,7 +15,7 @@ class MyModal(discord.ui.Modal):
         await interaction.response.send_message('Cool thanks!', ephemeral=True)
 
 
-class DynamicFormModal(ui.Modal, title='User Information Form'):
+class DynamicFormModal(ui.Modal, title='Placeholder'):
     def __init__(self, title: str, fields: List[str], template_name: str):
         super().__init__(title=title)
         self.template_name = template_name
@@ -44,7 +44,7 @@ class DynamicFormModal(ui.Modal, title='User Information Form'):
         return self.user_inputs
 
 
-class CompactAbilityModal(ui.Modal, title="Let's start with Ability **Scores and Modifiers**"):
+class CompactAbilityModal(ui.Modal, title="Ability **Scores and Modifiers**"):
     def __init__(self, title: str):
         super().__init__(title=title)
         self.ability_data = {}

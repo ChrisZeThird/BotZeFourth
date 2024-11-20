@@ -82,7 +82,7 @@ class OcManager(commands.Cog):
             await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
             selected_template = template_selector.value
-            await ctx.d
+
             # Retrieve columns for the selected template
             query = f"PRAGMA table_info({selected_template})"
             columns = await self.bot.pool.fetch(query)

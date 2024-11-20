@@ -1,7 +1,7 @@
 import asyncio
 import discord
 
-from utils.form import MyModal
+from utils.form import OCModal, DynamicFormModal
 
 colors = {
         "red": "#FF0000",
@@ -70,10 +70,43 @@ class MySelectMenu(discord.ui.Select):
             options.append(discord.SelectOption(label=label, value=value))
         super().__init__(placeholder='Select an option...', min_values=1, max_values=1, options=options)
 
+    # From value creates Modal fields
+    def select_template(self, value):
+        """
+        Retrieve columns for the selected value to parse as arguments in the modal class
+        :param value: Table name, str
+        :return: list to create fields of modal
+        """
+        query = f"PRAGMA table_info({value})"
+        columns = await self.bot.pool.fetch(query)
+        column_names = [row['name'] for row in columns]
+
+        # Skip DB-related fields and chunk columns for modal fields
+        user_fields = column_names[:2]  # Assuming first 2 are DB info
+        character_fields = column_names[2:]
+        exclude_fields = ["picture_url", "color", "template_id"]
+
+        if value == 'DnDCharacters':
+            # Custom handling for DnDCharacters template
+            ability_scores = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+            ability_modifiers = ["str_mod", "dex_mod", "con_mod", "int_mod", "wis_mod", "cha_mod"]
+
+            # Split fields into chunks of 5 for modals
+            user_fields = [field for field in user_fields if
+                           field not in ability_scores + ability_modifiers + exclude_fields]
+            field_chunks = [user_fields[i:i + 5] for i in
+                            range(0, len(user_fields), 5)]
+        else:
+            user_fields = [field for field in user_fields if field not in exclude_fields]
+            field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
+
+        return field_chunks
+
     async def callback(self, interaction: discord.Interaction):
         self.view.value = self.values[0]  # Save the selected value for later use
         # await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
-        await interaction.response.send_modal(MyModal(title='Test'))
+        field_chunks = self.select_template(self.view.value)
+        await interaction.response.send_modal(DynamicFormModal(title='Character Creation', fields=field_chunks[0]))
         self.view.stop()
 
 
