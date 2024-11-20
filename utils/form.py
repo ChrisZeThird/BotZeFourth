@@ -35,8 +35,11 @@ class DynamicFormModal(ui.Modal, title='Placeholder'):
         for item in self.children:
             self.user_inputs[item.label] = item.value
 
+        formatted_output = f"Form for template `{self.template_name}` submitted! Data: : " + "; ".join(
+            [f"`{key}`: {value}" for key, value in self.user_inputs.items()]
+        )
         await interaction.response.send_message(
-            f"Form for template `{self.template_name}` submitted! Data: {self.user_inputs}",
+            formatted_output,
             ephemeral=True
         )
 

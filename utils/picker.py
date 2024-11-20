@@ -93,12 +93,12 @@ class MySelectMenu(discord.ui.Select):
             ability_modifiers = ["str_mod", "dex_mod", "con_mod", "int_mod", "wis_mod", "cha_mod"]
 
             # Split fields into chunks of 5 for modals
-            user_fields = [field for field in user_fields if
+            user_fields = [field for field in character_fields if
                            field not in ability_scores + ability_modifiers + exclude_fields]
             field_chunks = [user_fields[i:i + 5] for i in
                             range(0, len(user_fields), 5)]
         else:
-            user_fields = [field for field in user_fields if field not in exclude_fields]
+            user_fields = [field for field in character_fields if field not in exclude_fields]
             field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
 
         return field_chunks
@@ -107,7 +107,9 @@ class MySelectMenu(discord.ui.Select):
         self.view.value = self.values[0]  # Save the selected value for later use
         # await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
         field_chunks = await self.select_template(self.view.value)
-        await interaction.response.send_modal(DynamicFormModal(title='Character Creation', fields=field_chunks[0], template_name=self.view.value))
+        modal = DynamicFormModal(title='Character Creation', fields=field_chunks[0], template_name=self.view.value)
+        await interaction.response.send_modal(modal)
+        await modal.wait()
         self.view.stop()
 
 
