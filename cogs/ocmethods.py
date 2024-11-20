@@ -99,16 +99,13 @@ class OcManager(commands.Cog):
                                       'picture_url': oc_picture,
                                       'color': color})
 
-            print(consolidated_data)
             # Fetch the template's column names and values to store
             columns = list(consolidated_data.keys())
             values = list(consolidated_data.values())
-            print(values)
             # Create placeholders for SQL query (e.g., '?, ?, ?, ...')
             placeholders = ', '.join(['?'] * len(columns))
             # Construct the query string dynamically
             query = f"INSERT INTO {template} ({', '.join(columns)}) VALUES ({placeholders})"
-            print(query)
             # Execute the query
             print(await self.bot.pool.execute(query, *values))
             await ctx.send(f'Character successfully added for <@{user_id}>!')
