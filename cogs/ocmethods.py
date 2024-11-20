@@ -22,6 +22,34 @@ class OcManager(commands.Cog):
             self.roles_dict = json.load(f)
         self.exclude_fields = ["picture_url", "color", "template_id"]
 
+    async def selectTemplate(self):
+        """
+        Simple function to get the list of template name
+        :return:
+        """
+        # Select the Template
+        rows = await self.bot.pool.fetch('SELECT * FROM Templates')
+        template_names = [row['template_name'] for row in rows]
+        return template_names
+
+    async def find_matching_id(self, guild_id):
+        """
+        Find all artists user_id for a given guild_id
+        :param guild_id:
+        :return:
+        """
+        # Step 1: Get all the template names from the Templates table
+        template_names = await self.selectTemplate()
+
+        # Step 2: Find user_ids from all tables where guild_id matches the current guild
+        matching_user_ids = set()
+        for table_name in template_names:
+            query = f'SELECT DISTINCT user_id FROM {table_name} WHERE guild_id = $1'
+            result = await self.bot.pool.fetch(query, guild_id)
+            matching_user_ids.update(row['user_id'] for row in result)
+
+        return matching_user_ids
+
     @commands.hybrid_command(name='ocadd', with_app_command=True)
     async def ocadd(self, ctx, picture: discord.Attachment):
         """
@@ -51,8 +79,7 @@ class OcManager(commands.Cog):
                     await ctx.send(f'You have picked {color} for your OC!')
 
                     # Select the Template
-                    rows = await self.bot.pool.fetch('SELECT * FROM Templates')
-                    template_names = [row['template_name'] for row in rows]
+                    template_names = self.selectTemplate()
                     # Create an instance of the DropdownMenu view for the oc names
                     template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
                     await ctx.send(content='**Select the template to use**', view=template_selector)
@@ -108,11 +135,69 @@ class OcManager(commands.Cog):
         except KeyError:
             await ctx.send("**Please set the authorized roles first with `addrole` before adding an OC.**")
 
-    # @commands.hybrid_command(name='ocdelete', with_app_command=True)
-    # @is_role_setup()
-    # async def ocdelete(self, ctx: CustomContext):
-    #     """ Delete an oc from the database """
-    #
+    @commands.hybrid_command(name='ocdelete', with_app_command=True)
+    async def ocdelete(self, ctx: CustomContext):
+        """ Delete an oc from the database """
+        # Get guild and user role
+        guild_id = str(ctx.guild.id)
+        user_roles = extract_role_ids(ctx.author.roles)  # Helper function to get role IDs
+        user_id = ctx.author.id
+
+        # Load roles from JSON (assume `open_json()` loads `roles.json`)
+        self.roles_dict = open_json()
+
+        try:
+            # Check if permissions have been set for the server
+            roles_list = self.roles_dict[guild_id]
+            # Verify if the user is allowed to access the database
+            if not any(str(role) in roles_list for role in user_roles):
+                await ctx.send("You do not have permission to access the database.")
+                return
+
+            matching_ids = await self.find_matching_id(guild_id)
+
+            if str(user_id) not in matching_ids:
+                await ctx.send("You have no characters registered in the database.")
+                return
+
+            template_name = await self.selectTemplate()
+            print('reached template_name')
+            # Fetch all OCs for the user across all templates
+            all_ocs = []
+            for table in template_name:
+                ocs = await self.bot.pool.fetch(f'SELECT character_name FROM {table} WHERE user_id = $1 AND guild_id = $2',
+                                                str(user_id), guild_id)
+                all_ocs.extend([row['character_name'] for row in ocs])
+
+            if not all_ocs:
+                await ctx.send("You have no OCs in the database to delete.")
+                return
+            print(all_ocs)
+            print("reached dropdown")
+            # Display dropdown to select OC
+            oc_delete_view = MyView(labels=all_ocs, values=all_ocs, bot=self.bot, use_modal=False)
+            await ctx.send(content="**Select the OC to delete**:", view=oc_delete_view)
+            await oc_delete_view.wait()  # Wait for the user to make a selection
+
+            if oc_delete_view.value:
+                selected_oc = oc_delete_view.value
+                print('reach oc deletion process')
+                # Delete the selected OC from the appropriate table
+                for table in template_name:
+                    query = f'DELETE FROM {table} WHERE character_name = ? AND user_id = ?'
+                    result = await self.bot.pool.execute(
+                        query, selected_oc, str(user_id))
+                    if result == "DELETE 1":  # Stop if OC was found and deleted
+                        await ctx.send(f"OC **{selected_oc}** has been successfully deleted.")
+                        return
+
+                await ctx.send(f"Could not find OC **{selected_oc}** to delete. It may have been deleted already.")
+            else:
+                await ctx.send("You did not select an OC for deletion.")
+
+        except KeyError:
+            await ctx.send("Roles for this server have not been set. Please use the `addrole` command first.")
+
     # @commands.hybrid_command(name='ocmodify', with_app_command=True)
     # @is_role_setup()
     # async def ocmodify(self, ctx: CustomContext):
@@ -124,38 +209,25 @@ class OcManager(commands.Cog):
         """ List all oc of an artist for the current server """
         guild_id = str(ctx.guild.id)
 
-        # Step 1: Get all the template names from the Templates table
-        rows = await self.bot.pool.fetch('SELECT template_name FROM Templates')
-        table_names = [row['template_name'] for row in rows]
-
-        # Step 2: Find user_ids from all tables where guild_id matches the current guild
-        matching_user_ids = set()
-        for table_name in table_names:
-            query = f'SELECT DISTINCT user_id FROM {table_name} WHERE guild_id = $1'
-            result = await self.bot.pool.fetch(query, guild_id)
-            matching_user_ids.update(row['user_id'] for row in result)
-
+        matching_user_ids = await self.find_matching_id(guild_id)
         # If there are no matching users
         if not matching_user_ids:
             await ctx.send("No users found with the current guild.")
             return
 
         else:
-            # Step 3: Fetch usernames for the matching user_ids
-            print(matching_user_ids)
+            # Fetch usernames for the matching user_ids
             user_names = []
             for user_id in matching_user_ids:
                 user = await self.bot.fetch_user(user_id)
                 user_names.append(user.name if user else f"Unknown User ({user_id})")
 
-            print(user_names)
             # Send the list of matching user_ids (or process them further as needed)
             artist_selector = MyView(labels=user_names, values=matching_user_ids, bot=self.bot, use_modal=False)
             await ctx.send(content='**Select the artist**', view=artist_selector)
             await artist_selector.wait()  # continues after stop() or timeout
 
             artist_id = artist_selector.value
-            print(artist_id)
 
             # Construct the query string dynamically
             try:
@@ -170,7 +242,7 @@ class OcManager(commands.Cog):
                     result = await self.bot.pool.fetch(query, artist_id)
                     oc_names.extend([row['character_name'] for row in result])
 
-                # Step 3: Return the result
+                # Return the result
                 if oc_names:
                     embed = discord.Embed(
                         title=f"OC List for {self.bot.get_user(int(artist_id))}",
@@ -184,16 +256,6 @@ class OcManager(commands.Cog):
             except Exception as e:
                 await ctx.send(f"An error occurred: {str(e)}")
 
-            # query = f"FROM INTO {template} ({', '.join(columns)}) VALUES ({placeholders})"
-            # # Execute the query
-            # print(await self.bot.pool.execute(query, *values))
-
-    #
-    # @commands.hybrid_command(name='artistlist', with_app_command=True)
-    # @commands.cooldown(1, 60, commands.BucketType.user)
-    # async def artistlist(self, ctx: CustomContext):
-    #     """ List all artists of a server """
-    #
     # @commands.hybrid_command(name='ocrandom', with_app_command=True)
     # @commands.cooldown(1, 30, commands.BucketType.user)
     # async def ocrandom(self, ctx: CustomContext):
