@@ -67,6 +67,6 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
         for item in self.children:
             self.user_inputs[item.label] = item.value
         print(self.user_inputs)
-        await interaction.response.send_message('Cool thanks!', ephemeral=True)
+        await interaction.response.send_message('Characters information successfully saved!', ephemeral=True)
         self.stop()  # Stop the modal to allow the next modal to be sent
 

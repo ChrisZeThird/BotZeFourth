@@ -119,11 +119,9 @@ class MySelectMenu(discord.ui.Select):
         await modal.wait()
 
         chunk_number = len(field_chunks)
-        if template_name == 'DnDCharacters':
-            chunk_number += 1
 
         index = 1
-        while index < len(field_chunks):
+        for index in range(1, chunk_number):
             # Create and send the modal
             followup_modal = DynamicFormModal(
                 title=f'Character Creation (Step {index}/{chunk_number})',
@@ -141,16 +139,16 @@ class MySelectMenu(discord.ui.Select):
 
             await view.wait()  # Wait for the confirmation button to be clicked
 
-            # Use the new interaction from the button to send the next modal
-            index += 1  # Move to the next chunk
+        # # Use the new interaction from the button to send the next modal
+        # index += 1  # Move to the next chunk
 
         # Send extra ability modal if DnDCharacters is selected
         if template_name == 'DnDCharacters':
-            ability_modal = CompactAbilityModal(title=f'Character Creation (Step {index+1}/{chunk_number}')
+            ability_modal = CompactAbilityModal(title=f'Character Creation (Extra step)')
             # Send the confirmation button
             view = NextModalButton(ability_modal)
             await interaction.followup.send(
-                content=f"Step {index + 1} out of {chunk_number}. Please click 'Next' to continue.",
+                content=f"Extra step. Please click 'Finish' to continue.",
                 view=view,
                 ephemeral=True  # Optionally make it ephemeral
             )
@@ -171,7 +169,7 @@ class NextModalButton(discord.ui.View):
         self.next_interaction = None
         self.modal = modal
 
-    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label='Next', style=discord.ButtonStyle.primary)
     async def next_button(self, button_interaction: discord.Interaction, button: discord.ui.Button):
         await button_interaction.response.send_modal(self.modal)
         self.stop()  # Stop the view to continue
