@@ -1,7 +1,7 @@
 import asyncio
 import discord
 
-from utils.form import OCModal, DynamicFormModal
+from utils.form import DynamicFormModal, CompactAbilityModal, OCModal
 
 colors = {
         "red": "#FF0000",
@@ -118,11 +118,15 @@ class MySelectMenu(discord.ui.Select):
         await interaction.response.send_modal(modal)
         await modal.wait()
 
+        chunk_number = len(field_chunks)
+        if template_name == 'DnDCharacters':
+            chunk_number += 1
+
         index = 1
         while index < len(field_chunks):
             # Create and send the modal
             followup_modal = DynamicFormModal(
-                title=f'Character Creation (Step {index}/{len(field_chunks)})',
+                title=f'Character Creation (Step {index}/{chunk_number})',
                 fields=field_chunks[index],
                 template_name=template_name
             )
@@ -130,7 +134,7 @@ class MySelectMenu(discord.ui.Select):
             # Send the confirmation button
             view = NextModalButton(followup_modal)
             await interaction.followup.send(
-                content=f"Step {index + 1} out of {len(field_chunks)}. Please click 'Next' to continue.",
+                content=f"Step {index} out of {chunk_number}. Please click 'Next' to continue.",
                 view=view,
                 ephemeral=True  # Optionally make it ephemeral
             )
@@ -139,6 +143,19 @@ class MySelectMenu(discord.ui.Select):
 
             # Use the new interaction from the button to send the next modal
             index += 1  # Move to the next chunk
+
+        # Send extra ability modal if DnDCharacters is selected
+        if template_name == 'DnDCharacters':
+            ability_modal = CompactAbilityModal(title=f'Character Creation (Step {index+1}/{chunk_number}')
+            # Send the confirmation button
+            view = NextModalButton(ability_modal)
+            await interaction.followup.send(
+                content=f"Step {index + 1} out of {chunk_number}. Please click 'Next' to continue.",
+                view=view,
+                ephemeral=True  # Optionally make it ephemeral
+            )
+
+            await view.wait()  # Wait for the confirmation button to be clicked
 
 
 class MyView(discord.ui.View):
