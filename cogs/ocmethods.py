@@ -64,55 +64,61 @@ class OcManager(commands.Cog):
         """
         # Get guild and user role
         guild_id = str(ctx.guild.id)
+        user_roles = extract_role_ids(ctx.message.author.roles)
         user_id = ctx.message.author.id
-        user_name = ctx.message.author.name
+        try:
+            # Check if permissions have been set for the server
+            roles_list = self.roles_dict[guild_id]
+            # Check is user is allowed to use the database
+            if any(str(role) in roles_list for role in user_roles):
+                if picture.content_type in ['image/png', 'image/jpeg']:
+                    def check(m):
+                        return m.author == ctx.author
 
-        if picture.content_type in ['image/png', 'image/jpeg']:
-            def check(m):
-                return m.author == ctx.author
+                    # Create instance of the ColorPicker DropdownMenu view
+                    color_view = ColorPicker(bot=self.bot)
+                    await ctx.send(view=color_view)
+                    await color_view.wait()
+                    color = color_view.colour
+                    await ctx.send(f'You have picked {color} for your OC!')
 
-            # Create instance of the ColorPicker DropdownMenu view
-            color_view = ColorPicker(bot=self.bot)
-            await ctx.send(view=color_view)
-            await color_view.wait()
-            color = color_view.colour
-            await ctx.send(f'You have picked {color} for your OC!')
+                    # Select the Template
+                    rows = await self.bot.pool.fetch('SELECT * FROM Templates')
+                    template_names = [row['template_name'] for row in rows]
+                    # Create an instance of the DropdownMenu view for the oc names
+                    template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
+                    await ctx.send(content='**Select the template to use**', view=template_selector)
+                    await template_selector.wait()  # continues after stop() or timeout
 
-            # Select the Template
-            rows = await self.bot.pool.fetch('SELECT * FROM Templates')
-            template_names = [row['template_name'] for row in rows]
-            # Create an instance of the DropdownMenu view for the oc names
-            template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
-            await ctx.send(content='**Select the template to use**', view=template_selector)
-            await template_selector.wait()  # continues after stop() or timeout
+                    template = template_selector.value
+                    # Get data to store
+                    data = template_selector.data_to_store
+                    # Prepare the picture to be stored in the database
+                    oc_picture = await picture.read()
+                    # Consolidate the list of dictionaries into a single dictionary
+                    consolidated_data = {}
+                    for entry in data:
+                        consolidated_data.update(entry)
+                    consolidated_data.update({'user_id': user_id,
+                                              'picture_url': oc_picture,
+                                              'color': color})
 
-            template = template_selector.value
-            # Get data to store
-            data = template_selector.data_to_store
-            # Prepare the picture to be stored in the database
-            oc_picture = await picture.read()
-            # Consolidate the list of dictionaries into a single dictionary
-            consolidated_data = {}
-            for entry in data:
-                consolidated_data.update(entry)
-            consolidated_data.update({'user_id': user_id,
-                                      'picture_url': oc_picture,
-                                      'color': color})
+                    # Fetch the template's column names and values to store
+                    columns = list(consolidated_data.keys())
+                    values = list(consolidated_data.values())
+                    # Create placeholders for SQL query (e.g., '?, ?, ?, ...')
+                    placeholders = ', '.join(['?'] * len(columns))
+                    # Construct the query string dynamically
+                    query = f"INSERT INTO {template} ({', '.join(columns)}) VALUES ({placeholders})"
+                    # Execute the query
+                    print(await self.bot.pool.execute(query, *values))
+                    await ctx.send(f'Character successfully added for <@{user_id}>!')
 
-            # Fetch the template's column names and values to store
-            columns = list(consolidated_data.keys())
-            values = list(consolidated_data.values())
-            # Create placeholders for SQL query (e.g., '?, ?, ?, ...')
-            placeholders = ', '.join(['?'] * len(columns))
-            # Construct the query string dynamically
-            query = f"INSERT INTO {template} ({', '.join(columns)}) VALUES ({placeholders})"
-            # Execute the query
-            print(await self.bot.pool.execute(query, *values))
-            await ctx.send(f'Character successfully added for <@{user_id}>!')
-
-        else:
-            # The attachment is not a PNG or JPEG file
-            await ctx.send("Please attach a **PNG** or **JPEG** file.")
+                else:
+                    # The attachment is not a PNG or JPEG file
+                    await ctx.send("Please attach a **PNG** or **JPEG** file.")
+        except KeyError:
+            await ctx.send("**Please set the authorized roles first with `addrole` before adding an OC.**")
 
     # @commands.hybrid_command(name='ocdelete', with_app_command=True)
     # @is_role_setup()
