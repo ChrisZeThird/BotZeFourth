@@ -1,7 +1,6 @@
 import re
 
 
-
 def ordinal_suffix(n):
     if 10 <= n % 100 <= 20:
         suffix = 'th'
@@ -35,4 +34,3 @@ def scrub(table_name):
     :return: clean name
     """
     return ''.join(chr for chr in table_name if chr.isalnum())
-

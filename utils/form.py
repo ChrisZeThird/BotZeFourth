@@ -66,7 +66,36 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
         # Collect and store user input for each field
         for item in self.children:
             self.user_inputs[item.label] = item.value
-        print(self.user_inputs)
-        await interaction.response.send_message('Characters information successfully saved!', ephemeral=True)
+
+        # Process the input for Ability Scores and Modifiers
+        try:
+            ability_scores = self.user_inputs.get("Ability Scores")
+            ability_modifiers = self.user_inputs.get("Ability Modifiers")
+
+            scores = list(map(int, ability_scores.split(',')))
+            modifiers = list(map(int, ability_modifiers.split(',')))
+
+            # Validate the number of entries
+            if len(scores) != 6 or len(modifiers) != 6:
+                raise ValueError("Invalid number of scores or modifiers provided.")
+
+        except ValueError as e:
+            await interaction.response.send_message(
+                f"Error: {e}\nPlease enter exactly 6 values for both scores and modifiers as shown in the placeholder.",
+                ephemeral=True
+            )
+            return
+
+        # Process the valid data
+        ability_data = {
+            "strength": scores[0], "dexterity": scores[1], "constitution": scores[2],
+            "intelligence": scores[3], "wisdom": scores[4], "charisma": scores[5],
+            "str_mod": modifiers[0], "dex_mod": modifiers[1], "con_mod": modifiers[2],
+            "int_mod": modifiers[3], "wis_mod": modifiers[4], "cha_mod": modifiers[5],
+        }
+
+        await interaction.response.send_message(f'Characters information successfully saved!\n{ability_data}', ephemeral=True)
         self.stop()  # Stop the modal to allow the next modal to be sent
+
+        return ability_data
 
