@@ -43,8 +43,6 @@ class DynamicFormModal(ui.Modal, title='Placeholder'):
             ephemeral=True
         )
         self.stop()  # Stop the modal to allow the next modal to be sent
-        # Return the collected data (could be passed to `ocadd` for further processing)
-        return self.user_inputs
 
 
 class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
@@ -76,18 +74,27 @@ class CompactAbilityModal(ui.Modal, title="Ability Scores and Modifiers"):
             modifiers = list(map(int, ability_modifiers.split(',')))
 
             # Process the valid data
-            ability_data = {
+            self.user_inputs = {
                 "strength": scores[0], "dexterity": scores[1], "constitution": scores[2],
                 "intelligence": scores[3], "wisdom": scores[4], "charisma": scores[5],
                 "str_mod": modifiers[0], "dex_mod": modifiers[1], "con_mod": modifiers[2],
                 "int_mod": modifiers[3], "wis_mod": modifiers[4], "cha_mod": modifiers[5],
             }
 
-            await interaction.response.send_message(f'Characters information successfully saved!\n{ability_data}',
+            # Create a formatted string
+            formatted_data = (
+                f"**Attributes:**\n"
+                f"- Strength: {self.user_inputs['strength']} (Modifier: {self.user_inputs['str_mod']})\n"
+                f"- Dexterity: {self.user_inputs['dexterity']} (Modifier: {self.user_inputs['dex_mod']})\n"
+                f"- Constitution: {self.user_inputs['constitution']} (Modifier: {self.user_inputs['con_mod']})\n"
+                f"- Intelligence: {self.user_inputs['intelligence']} (Modifier: {self.user_inputs['int_mod']})\n"
+                f"- Wisdom: {self.user_inputs['wisdom']} (Modifier: {self.user_inputs['wis_mod']})\n"
+                f"- Charisma: {self.user_inputs['charisma']} (Modifier: {self.user_inputs['cha_mod']})"
+            )
+
+            await interaction.response.send_message(f'Characters information successfully saved!\n{formatted_data}',
                                                     ephemeral=True)
             self.stop()  # Stop the modal to allow the next modal to be sent
-
-            return ability_data
 
         except ValueError as e:
             await interaction.response.send_message(

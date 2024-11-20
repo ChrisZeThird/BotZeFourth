@@ -71,6 +71,8 @@ class MySelectMenu(discord.ui.Select):
             options.append(discord.SelectOption(label=label, value=value))
         super().__init__(placeholder='Select an option...', min_values=1, max_values=1, options=options)
 
+        self.data_to_store = []
+
     # From value creates Modal fields
     async def select_template(self, value):
         """
@@ -109,6 +111,7 @@ class MySelectMenu(discord.ui.Select):
 
         # Send the first modal
         await self.loop_through_modals(interaction, field_chunks, self.view.value)
+        self.view.stop()
 
     async def loop_through_modals(self, interaction: discord.Interaction, field_chunks, template_name):
         # Create Modal object
@@ -116,10 +119,11 @@ class MySelectMenu(discord.ui.Select):
         await interaction.response.send_modal(modal)
         await modal.wait()
 
-        chunk_number = len(field_chunks)
+        self.data_to_store.append(modal.user_inputs)
 
-        index = 1
+        chunk_number = len(field_chunks)
         for index in range(1, chunk_number):
+            temp_data_to_store = self.data_to_store
             # Create and send the modal
             followup_modal = DynamicFormModal(
                 title=f'Character Creation (Step {index}/{chunk_number})',
@@ -128,20 +132,21 @@ class MySelectMenu(discord.ui.Select):
             )
 
             # Send the confirmation button
-            view = NextModalButton(followup_modal)
+            form = NextModalButton(followup_modal)
             await interaction.followup.send(
                 content=f"Step {index} out of {chunk_number}. Please click 'Next' to continue.",
-                view=view,
+                view=form,
                 ephemeral=True  # Optionally make it ephemeral
             )
 
-            await view.wait()  # Wait for the confirmation button to be clicked
+            await form.wait()  # Wait for the confirmation button to be clicked
+            await followup_modal.wait()
 
-        # # Use the new interaction from the button to send the next modal
-        # index += 1  # Move to the next chunk
+            self.data_to_store.append(followup_modal.user_inputs)
 
         # Send extra ability modal if DnDCharacters is selected
         if template_name == 'DnDCharacters':
+            temp_data_to_store = self.data_to_store
             ability_modal = CompactAbilityModal(title=f'Character Creation (Extra step)')
             # Send the confirmation button
             view = NextModalButton(ability_modal)
@@ -152,18 +157,24 @@ class MySelectMenu(discord.ui.Select):
             )
 
             await view.wait()  # Wait for the confirmation button to be clicked
-
+            await ability_modal.wait()
+            self.data_to_store.append(ability_modal.user_inputs)
 
 
 class MyView(discord.ui.View):
     def __init__(self, labels, values, bot):
         super().__init__()
         self.value = None
-        self.add_item(MySelectMenu(labels, values, bot=bot))
+        self.select_menu = MySelectMenu(labels, values, bot=bot)
+        self.add_item(self.select_menu)
+
+    @property
+    def data_to_store(self):
+        return self.select_menu.data_to_store
 
 
 class NextModalButton(discord.ui.View):
-    def __init__(self, modal):
+    def __init__(self, modal: discord.ui.Modal):
         super().__init__()
         self.next_interaction = None
         self.modal = modal
