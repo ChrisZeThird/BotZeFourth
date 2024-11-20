@@ -72,8 +72,6 @@ class MySelectMenu(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.value = self.values[0]  # Save the selected value for later use
-        # TODO Fix modal interaction, need to send it after selecting in drop down menu
-        # TODO Add a checkpoint point to confirm to send next modal
         # await interaction.response.send_message(f"Selection: {self.view.value}", ephemeral=True)
         await interaction.response.send_modal(MyModal(title='Test'))
         self.view.stop()

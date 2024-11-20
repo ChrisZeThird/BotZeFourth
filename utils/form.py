@@ -12,7 +12,7 @@ class MyModal(discord.ui.Modal):
         self.add_item(discord.ui.TextInput(label="Long Input", style=TextStyle.long))
 
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.send_message('Cool thanks!')
+        await interaction.response.send_message('Cool thanks!', ephemeral=True)
 
 
 class DynamicFormModal(ui.Modal, title='User Information Form'):

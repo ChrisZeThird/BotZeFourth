@@ -82,7 +82,7 @@ class OcManager(commands.Cog):
             await ctx.send(content='**Select the template to use**', view=template_selector)
             await template_selector.wait()  # continues after stop() or timeout
             selected_template = template_selector.value
-
+            await ctx.d
             # Retrieve columns for the selected template
             query = f"PRAGMA table_info({selected_template})"
             columns = await self.bot.pool.fetch(query)
@@ -93,7 +93,6 @@ class OcManager(commands.Cog):
             if selected_template != "DnDCharacters":
                 user_fields = [field for field in user_fields if field not in self.exclude_fields]
                 field_chunks = [user_fields[i:i + 5] for i in range(0, len(user_fields), 5)]
-                print("Basic Setup")
 
             else:
                 # Custom handling for DnDCharacters template
@@ -109,8 +108,8 @@ class OcManager(commands.Cog):
                 await ability_modal.wait()  # Wait for the modal to complete
                 ability_data = ability_modal.ability_data
             print(f"Field chunks for modal: {field_chunks}")
-            # Loop through chunks and display modals
 
+            # Loop through chunks and display modals
             # collected_data = {}
             # for chunk in field_chunks:
             #     modal = DynamicFormModal(title=f"{selected_template} Form", fields=chunk,
