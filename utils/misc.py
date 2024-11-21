@@ -29,6 +29,21 @@ def add_spaces_to_capital_letters(input_string):
     return output_string.strip()
 
 
+def format_string(input_string):
+    """
+    Formats a string by replacing underscores with spaces
+    and capitalizing the first letter.
+
+    Args:
+        input_string (str): The string to format.
+
+    Returns:
+        str: The formatted string.
+    """
+    formatted = input_string.replace('_', ' ').capitalize()
+    return formatted
+
+
 def scrub(table_name):
     """
     Clean table name to avoid code injection and prevent hack. Only alphanumeric characters are allowed.
