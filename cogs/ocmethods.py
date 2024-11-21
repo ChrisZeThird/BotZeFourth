@@ -282,7 +282,6 @@ class OcManager(commands.Cog):
             return
 
         else:
-            print(matching_user_ids)
             # Fetch usernames for the matching user_ids
             user_names = []
             for user_id in matching_user_ids:
@@ -362,9 +361,6 @@ class OcManager(commands.Cog):
                     # Store the results in the dictionary, keyed by the template name
                     oc_dict_name[table_name] = [row['character_name'] for row in result]
 
-                # Step 3: Flatten the dictionary into a list for dropdown
-                print(oc_dict_name)
-                # Return the result
                 if bool(oc_dict_name):  # Empty dictionaries evaluate to False in Python
                     # Send the list of matching oc for given user_id
                     oc_names = concatenate_dict_values(oc_dict_name)  # just need the list of names for this step
@@ -478,10 +474,6 @@ class OcManager(commands.Cog):
 
             except Exception as e:
                 await ctx.send(f"An error occurred: {str(e)}")
-
-
-
-
 
 
 async def setup(bot):
