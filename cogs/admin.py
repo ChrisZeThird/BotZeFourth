@@ -7,6 +7,7 @@ from utils import permissions
 from utils.default import CustomContext
 from discord.ext import commands
 from utils.data import DiscordBot
+from utils.misc import open_json
 
 
 class Admin(commands.Cog):
@@ -57,12 +58,7 @@ class Admin(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def addrole(self, ctx: CustomContext, role):
         """ Add roles allowed to use the bot"""
-        # Check if the JSON file exists
-        if not os.path.exists('roles.json'):
-            open('roles.json', 'w').close()
-        # If the file exists, load the data from the file
-        with open('roles.json', 'r') as f:
-            roles_dict = json.load(f)
+        roles_dict = open_json()
 
         # Get the server ID
         server_id = str(ctx.guild.id)
@@ -112,13 +108,7 @@ class Admin(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def addchannel(self, ctx: CustomContext, channel_id):
         # Check if the JSON file exists
-        if not os.path.exists('channels.json'):
-            open('channels.json', 'w').close()
-            return
-
-        # If the file exists, load the data from the file
-        with open('channels.json', 'r') as f:
-            channels_dict = json.load(f)
+        channels_dict = open_json(path='channels.json')
 
         # Get the server ID
         server_id = str(ctx.guild.id)

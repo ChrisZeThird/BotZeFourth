@@ -44,3 +44,9 @@ def open_json(path='roles.json'):
         with open(path, 'r') as f:
             return json.load(f)
     return {}
+
+
+def has_link(message):
+    # Regular expression to find URLs
+    urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', message.content.lower())
+    return urls
