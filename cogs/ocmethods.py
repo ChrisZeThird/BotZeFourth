@@ -7,7 +7,7 @@ from discord.ext import commands
 from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import init_embed
-from utils.misc import extract_role_ids, open_json
+from utils.misc import extract_role_ids, open_json, concatenate_dict_values, get_key_by_value
 from utils.picker import ColorPicker, MyView
 
 
@@ -300,15 +300,72 @@ class OcManager(commands.Cog):
             except Exception as e:
                 await ctx.send(f"An error occurred: {str(e)}")
 
+    @commands.hybrid_command(name='ocinfo', with_app_command=True)
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    async def ocinfo(self, ctx: CustomContext):
+        """ Gives the information sheet of an OC """
+        guild_id = str(ctx.guild.id)
+
+        matching_user_ids = await self.find_matching_id(guild_id)
+        # If there are no matching users
+        if not matching_user_ids:
+            await ctx.send("No users found with the current guild.")
+            return
+
+        else:
+            # Fetch usernames for the matching user_ids
+            user_names = []
+            for user_id in matching_user_ids:
+                user = await self.bot.fetch_user(user_id)
+                user_names.append(user.name if user else f"Unknown User ({user_id})")
+
+            # Send the list of matching user_ids (or process them further as needed)
+            artist_selector = MyView(labels=user_names, values=matching_user_ids, bot=self.bot, use_modal=False)
+            await ctx.send(content='**Select the artist**', view=artist_selector)
+            await artist_selector.wait()  # continues after stop() or timeout
+
+            artist_id = artist_selector.value
+
+            # Construct the query string dynamically
+            oc_dict = {}
+            try:
+                # Step 1: Get all the table names from the TEMPLATE table
+                rows = await self.bot.pool.fetch('SELECT template_name FROM Templates')
+                table_names = [row['template_name'] for row in rows]
+
+                # Step 2: For each table name, fetch the OC names for the given artist_id
+                for table_name in table_names:
+                    query = f'SELECT character_name FROM {table_name} WHERE user_id = $1'
+                    result = await self.bot.pool.fetch(query, artist_id)
+                    # Store the results in the dictionary, keyed by the template name
+                    oc_dict[table_name] = [row['character_name'] for row in result]
+
+                # Step 3: Flatten the dictionary into a list for dropdown
+                print(oc_dict)
+                # Return the result
+                if bool(oc_dict):  # Empty dictionaries evaluate to False in Python
+                    # Send the list of matching oc for given user_id
+                    oc_names = concatenate_dict_values(oc_dict)  # just need the list of names for this step
+                    oc_selector = MyView(labels=oc_names, values=oc_names, bot=self.bot, use_modal=False)
+                    await ctx.send(content='**Select the character**', view=oc_selector)
+                    await oc_selector.wait()  # continues after stop() or timeout
+
+                    oc_name = oc_selector.value
+                    print(oc_name)
+                    # TODO Build embed depending on oc selected and template
+                    # Following is a place holder
+                    await ctx.send(f'You have selected **{oc_name}**!\nThis OC comes from the **{get_key_by_value(value=oc_name, dictionary=oc_dict)}** template')
+                else:
+                    await ctx.send(f"No OC names found for artist {self.bot.get_user(int(artist_id))}.")
+
+            except Exception as e:
+                await ctx.send(f"An error occurred: {str(e)}")
+
     # @commands.hybrid_command(name='ocrandom', with_app_command=True)
     # @commands.cooldown(1, 30, commands.BucketType.user)
     # async def ocrandom(self, ctx: CustomContext):
     #     """ Send the description of a random selected OC """
-    #
-    # @commands.hybrid_command(name='ocinfo', with_app_command=True)
-    # @commands.cooldown(1, 30, commands.BucketType.user)
-    # async def ocinfo(self, ctx: CustomContext, artist_name, oc_name):
-    #     """ Gives the information sheet of an OC """
+
 
 
 async def setup(bot):

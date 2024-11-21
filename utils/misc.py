@@ -50,3 +50,37 @@ def has_link(message):
     # Regular expression to find URLs
     urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', message.content.lower())
     return urls
+
+
+# Dictionary methods
+def concatenate_dict_values(dictionary):
+    """
+    Concatenates all the lists in a dictionary into a single list.
+
+    Args:
+        dictionary (dict): A dictionary where all values are lists.
+
+    Returns:
+        list: A single list containing all elements from the lists in the dictionary.
+    """
+    result = []
+    for value_list in dictionary.values():
+        result.extend(value_list)
+    return result
+
+
+def get_key_by_value(value, dictionary):
+    """
+    Returns the key from the dictionary for which the value is present in the list of values.
+
+    Args:
+        value: The value to search for in the dictionary's lists.
+        dictionary (dict): A dictionary where values are lists.
+
+    Returns:
+        key: The key for which the value is present in the list, or None if not found.
+    """
+    for key, value_list in dictionary.items():
+        if value in value_list:
+            return key
+    return None
