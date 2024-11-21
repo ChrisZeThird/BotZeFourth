@@ -96,19 +96,18 @@ class OcManager(commands.Cog):
 
                     # Create instance of the ColorPicker DropdownMenu view
                     color_view = ColorPicker(bot=self.bot)
-                    await ctx.send(view=color_view)
+                    await ctx.send(content='**Select a color to use**', view=color_view)
                     await color_view.wait()
                     color = color_view.colour
-                    await ctx.send(f'You have picked {color} for your OC!')
 
                     # Select the Template
-                    template_names = self.selectTemplate()
+                    template_names = await self.selectTemplate()
                     # Create an instance of the DropdownMenu view for the oc names
                     template_selector = MyView(labels=template_names, values=template_names, bot=self.bot)
                     await ctx.send(content='**Select the template to use**', view=template_selector)
                     await template_selector.wait()  # continues after stop() or timeout
-
                     template = template_selector.value
+
                     # Get data to store
                     data = template_selector.data_to_store
                     # Prepare the picture to be stored in the database

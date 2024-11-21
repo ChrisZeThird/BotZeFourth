@@ -1,5 +1,6 @@
 import asyncio
 import discord
+import re
 
 from utils.form import DynamicFormModal, CompactAbilityModal, OCModal
 
@@ -40,25 +41,26 @@ class ColorPicker(discord.ui.View):
     )
     async def select_colour(self, interaction: discord.Interaction, select_item: discord.ui.Select):
         if select_item.values[0] == "custom":
-            # Prompt the user to input a hex code
-            await interaction.response.send_message("Please input a hex code for your custom color.")
+            await interaction.response.send_message("Please input a hex code for your custom color.", ephemeral=True)
             try:
-                # Wait for the user's response
-                response = await self.bot.wait_for("message", check=lambda m: m.author == interaction.user,
-                                                   timeout=30.0)
-                # Set the color to the user's input
-                self.colour = response.content
-                print(response)
+                response = await self.bot.wait_for(
+                    "message", check=lambda m: m.author == interaction.user, timeout=30.0
+                )
+                self.colour = response.content.strip()
+                # Validate the hex code
+                if not re.match(r'^#(?:[0-9a-fA-F]{3}){1,2}$', self.colour):
+                    await interaction.followup.send("Invalid hex code. Please try again.", ephemeral=True)
+                    return
+                await interaction.followup.send(f"Custom color selected: {self.colour}", ephemeral=True)
             except asyncio.TimeoutError:
-                # Handle timeout
-                await interaction.response.send_message("Timed out. Please try again.")
-                return
+                await interaction.followup.send("You took too long to input a color. Defaulting to black.",
+                                                ephemeral=True)
+                self.colour = colors["black"]
         else:
-            # Set the color to the selected option
             self.colour = select_item.values[0]
-        self.children[0].disabled = True
-        await interaction.message.edit(view=self)
-        await interaction.response.defer()
+            await interaction.response.send_message(f"Color selected: {self.colour}", ephemeral=True)
+
+        # Stop the view after completing interaction
         self.stop()
 
 
