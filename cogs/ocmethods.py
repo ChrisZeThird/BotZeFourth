@@ -3,13 +3,35 @@ import discord
 import json
 import os
 import random
+from io import BytesIO
 
 from discord.ext import commands
 from utils.data import DiscordBot
 from utils.default import CustomContext
-from utils.embed import init_embed
+from utils.embed import PaginatedOCView, create_embed
 from utils.misc import extract_role_ids, open_json, concatenate_dict_values, get_key_by_value
 from utils.picker import ColorPicker, MyView
+
+
+async def fetch_oc_information(bot, table_name, character_name, user_id):
+    """
+    Fetch OC information from a specified table.
+
+    :param bot: asyncpg connection pool.
+    :param table_name: Name of the table to query.
+    :param character_name: Name of the character to fetch.
+    :param user_id: User ID associated with the OC.
+
+    Returns:
+        dict: Dictionary of OC information with column names as keys.
+    """
+    query = f"SELECT * FROM {table_name} WHERE character_name = $1 AND user_id = $2"
+    result = await bot.pool.fetchrow(query, character_name, user_id)
+
+    if result:
+        return dict(result)
+    else:
+        return {}
 
 
 class OcManager(commands.Cog):
@@ -331,7 +353,7 @@ class OcManager(commands.Cog):
             artist_id = artist_selector.value
 
             # Construct the query string dynamically
-            oc_dict = {}
+            oc_dict_name = {}
             try:
                 # Step 1: Get all the table names from the TEMPLATE table
                 rows = await self.bot.pool.fetch('SELECT template_name FROM Templates')
@@ -342,23 +364,52 @@ class OcManager(commands.Cog):
                     query = f'SELECT character_name FROM {table_name} WHERE user_id = $1'
                     result = await self.bot.pool.fetch(query, artist_id)
                     # Store the results in the dictionary, keyed by the template name
-                    oc_dict[table_name] = [row['character_name'] for row in result]
+                    oc_dict_name[table_name] = [row['character_name'] for row in result]
 
                 # Step 3: Flatten the dictionary into a list for dropdown
-                print(oc_dict)
+                print(oc_dict_name)
                 # Return the result
-                if bool(oc_dict):  # Empty dictionaries evaluate to False in Python
+                if bool(oc_dict_name):  # Empty dictionaries evaluate to False in Python
                     # Send the list of matching oc for given user_id
-                    oc_names = concatenate_dict_values(oc_dict)  # just need the list of names for this step
+                    oc_names = concatenate_dict_values(oc_dict_name)  # just need the list of names for this step
                     oc_selector = MyView(labels=oc_names, values=oc_names, bot=self.bot, use_modal=False)
                     await ctx.send(content='**Select the character**', view=oc_selector)
                     await oc_selector.wait()  # continues after stop() or timeout
 
                     oc_name = oc_selector.value
-                    print(oc_name)
+                    # Fetch information of selected OC
+                    table_name = get_key_by_value(value=oc_name, dictionary=oc_dict_name)
+                    query_oc_dict = await fetch_oc_information(bot=self.bot, table_name=table_name, character_name=oc_name, user_id=str(artist_id))
+
+                    # Get keys and values from the oc dictionary
+                    oc_dict = query_oc_dict.copy()
+                    # Get color and picture first
+                    color = oc_dict['color']
+                    picture_url = oc_dict['picture_url']
+                    for e in ['character_id', 'user_id', 'guild_id', 'color', 'picture_url']:
+                        oc_dict.pop(e)
+                    categories = list(oc_dict.keys())
+                    categories_pages = [categories[i:i + 5] for i in range(0, len(categories), 5)]
+                    values_pages = [list(oc_dict.values())[i:i + 5] for i in range(0, len(categories), 5)]
+
                     # TODO Build embed depending on oc selected and template
-                    # Following is a place holder
-                    await ctx.send(f'You have selected **{oc_name}**!\nThis OC comes from the **{get_key_by_value(value=oc_name, dictionary=oc_dict)}** template')
+                    embed_list = []
+                    for page in range(len(categories_pages)):
+                        embed = create_embed(
+                            categories=categories_pages[page],
+                            values=values_pages[page],
+                            color=color
+                        )
+
+                        if picture_url:
+                            # Create a discord.File object from the image data
+                            file = discord.File(BytesIO(picture_url), filename='oc_picture.png')
+                            embed.set_thumbnail(url=f"attachment://{file.filename}")
+
+                        embed_list.append(embed)
+
+                    await PaginatedOCView().start(ctx=ctx, pages=embed_list)
+
                 else:
                     await ctx.send(f"No OC names found for artist {self.bot.get_user(int(artist_id))}.")
 
@@ -402,8 +453,8 @@ class OcManager(commands.Cog):
                     for template_name, ocs in oc_dict.items():
                         oc_names.extend([oc[0] for oc in ocs])
 
-                        # Randomly select an OC from the list
-                        random_oc_name = random.choice(oc_names)
+                    # Randomly select an OC from the list
+                    random_oc_name = random.choice(oc_names)
 
                     # Find the template and description for the selected OC
                     for template_name, ocs in oc_dict.items():
