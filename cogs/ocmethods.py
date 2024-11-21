@@ -252,16 +252,17 @@ class OcManager(commands.Cog):
                 all_ocs.extend([row['character_name'] for row in ocs])
 
             if not all_ocs:
-                await ctx.send("You have no OCs in the database to delete.")
+                await ctx.send("You have no OCs in the database to modify.")
                 return
             # Display dropdown to select OC
             oc_modify = MyView(labels=all_ocs, values=all_ocs, bot=self.bot, use_modal=False)
-            await ctx.send(content="**Select the OC to delete**:", view=oc_modify)
+            await ctx.send(content="**Select the OC to modify**:", view=oc_modify)
             await oc_modify.wait()  # Wait for the user to make a selection
 
             if oc_modify.value:
                 selected_oc = oc_modify.value
                 # TODO Modal logic implementation
+                await ctx.send('This is a placeholder. Command has not been rewrote yet')
 
             else:
                 await ctx.send("You did not select an OC for deletion.")
@@ -399,9 +400,8 @@ class OcManager(commands.Cog):
                         artist = ctx.bot.get_user(int(artist_id))
                         avatar_url = artist.avatar
                         embed.set_thumbnail(url=avatar_url)  # Artist avatar
-
-                        embed_list.append(embed)
                         embed.set_image(url=f"attachment://{oc_picture_file.filename}")
+                        embed_list.append(embed)
 
                     await PaginatedOCView().start(ctx=ctx, pages=embed_list, file=oc_picture_file)
 
@@ -412,7 +412,7 @@ class OcManager(commands.Cog):
                 await ctx.send(f"An error occurred: {str(e)}")
 
     @commands.hybrid_command(name='ocrandom', with_app_command=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    # @commands.cooldown(1, 30, commands.BucketType.user)
     async def ocrandom(self, ctx: CustomContext):
         """ Send the description of a random selected OC """
         """ Sends a random OC from a selected artist """
@@ -428,14 +428,20 @@ class OcManager(commands.Cog):
             # Randomly select a user_id from the matching_user_ids list
             artist_id = random.choice(matching_user_ids)
 
-            # Construct the query string dynamically for fetching OC names
-            oc_dict = {}
             try:
-                # Step 1: Get all the table names from the TEMPLATE table
-                template_name = await self.selectTemplate()
-                selected_template = random.choice(template_name)
+                # Get all the table names from the TEMPLATE table
+                template_names = await self.selectTemplate()
+                valid_templates = []
+                # Select a template name, attempt system if the user doesn't have a character in that template table
+                for template in template_names:
+                    query = f"SELECT COUNT(*) FROM {template} WHERE user_id = $1"
+                    result = await self.bot.pool.fetch(query, artist_id)  # fetchval returns the count directly
+                    print(result[0]['COUNT(*)'])
+                    if result[0]['COUNT(*)'] > 0:  # Check if the artist has characters in this template
+                        valid_templates.append(template)
 
-                # Step 2: For each table name, fetch the OC names for the selected artist_id
+                selected_template = random.choice(valid_templates)
+                # For a valid table name, fetch the OC names for the selected artist_id
                 query = f'SELECT * FROM {selected_template} WHERE user_id = $1'
                 result = await self.bot.pool.fetch(query, artist_id)
                 selected_oc_dict = random.choice(result)
@@ -447,6 +453,7 @@ class OcManager(commands.Cog):
                 picture_url = oc_dict['picture_url']
                 for e in ['character_id', 'user_id', 'guild_id', 'color', 'picture_url']:
                     oc_dict.pop(e)
+
                 categories = [format_string(key) for key in list(oc_dict.keys())]
                 categories_pages = [categories[i:i + 5] for i in range(0, len(categories), 5)]
                 values_pages = [list(oc_dict.values())[i:i + 5] for i in range(0, len(categories), 5)]
@@ -466,10 +473,8 @@ class OcManager(commands.Cog):
                     artist = ctx.bot.get_user(int(artist_id))
                     avatar_url = artist.avatar
                     embed.set_thumbnail(url=avatar_url)  # Artist avatar
-
-                    embed_list.append(embed)
                     embed.set_image(url=f"attachment://{oc_picture_file.filename}")
-
+                    embed_list.append(embed)
                 await PaginatedOCView().start(ctx=ctx, pages=embed_list, file=oc_picture_file)
 
             except Exception as e:
