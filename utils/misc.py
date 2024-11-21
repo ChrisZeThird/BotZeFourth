@@ -35,3 +35,8 @@ def scrub(table_name):
     """
     return ''.join(chr for chr in table_name if chr.isalnum())
 
+
+def has_link(message):
+    # Regular expression to find URLs
+    urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', message.content.lower())
+    return urls
