@@ -22,11 +22,15 @@ class Artwork(commands.Cog):
             server_id = str(message.guild.id)
             if server_id in channels_dict:
                 allowed_channels = channels_dict[server_id]
-                if str(message.channel.id) in allowed_channels and len(message.attachments) > 0:
-                    # Create a thread
-                    thread = await message.create_thread(name=f"Artwork Discussion of {message.author.name}")
-                    await thread.send(f"This is a thread for discussing the artwork sent by {message.author.mention}. "
-                                      f"\nFeel free to share your thoughts!")
+                if str(message.channel.id) in allowed_channels:
+                    if len(message.attachments) > 0 or has_link(message):
+                        # Create a thread
+                        thread = await message.create_thread(name=f"Artwork Discussion of {message.author.name}")
+                        await thread.send(
+                            f"This is a thread for discussing the artwork sent by {message.author.mention}. "
+                            f"\nFeel free to share your thoughts!")
+            else:
+                pass
         else:
             pass
 
