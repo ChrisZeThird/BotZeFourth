@@ -2,6 +2,7 @@ import asyncio
 import discord
 import json
 import os
+import random
 
 from discord.ext import commands
 from utils.data import DiscordBot
@@ -48,7 +49,7 @@ class OcManager(commands.Cog):
             result = await self.bot.pool.fetch(query, guild_id)
             matching_user_ids.update(row['user_id'] for row in result)
 
-        return matching_user_ids
+        return list(matching_user_ids)
 
     @commands.hybrid_command(name='ocadd', with_app_command=True)
     async def ocadd(self, ctx, picture: discord.Attachment):
@@ -260,11 +261,13 @@ class OcManager(commands.Cog):
             return
 
         else:
+            print(matching_user_ids)
             # Fetch usernames for the matching user_ids
             user_names = []
             for user_id in matching_user_ids:
                 user = await self.bot.fetch_user(user_id)
-                user_names.append(user.name if user else f"Unknown User ({user_id})")
+                if user:
+                    user_names.append(user.name)
 
             # Send the list of matching user_ids (or process them further as needed)
             artist_selector = MyView(labels=user_names, values=matching_user_ids, bot=self.bot, use_modal=False)
@@ -317,7 +320,8 @@ class OcManager(commands.Cog):
             user_names = []
             for user_id in matching_user_ids:
                 user = await self.bot.fetch_user(user_id)
-                user_names.append(user.name if user else f"Unknown User ({user_id})")
+                if user:
+                    user_names.append(user.name)
 
             # Send the list of matching user_ids (or process them further as needed)
             artist_selector = MyView(labels=user_names, values=matching_user_ids, bot=self.bot, use_modal=False)
@@ -361,10 +365,65 @@ class OcManager(commands.Cog):
             except Exception as e:
                 await ctx.send(f"An error occurred: {str(e)}")
 
-    # @commands.hybrid_command(name='ocrandom', with_app_command=True)
-    # @commands.cooldown(1, 30, commands.BucketType.user)
-    # async def ocrandom(self, ctx: CustomContext):
-    #     """ Send the description of a random selected OC """
+    @commands.hybrid_command(name='ocrandom', with_app_command=True)
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    async def ocrandom(self, ctx: CustomContext):
+        """ Send the description of a random selected OC """
+        """ Sends a random OC from a selected artist """
+        guild_id = str(ctx.guild.id)
+
+        matching_user_ids = await self.find_matching_id(guild_id)
+        # If there are no matching users
+        if not matching_user_ids:
+            await ctx.send("No users found with the current guild.")
+            return
+
+        else:
+            # Randomly select a user_id from the matching_user_ids list
+            artist_id = random.choice(matching_user_ids)
+
+            # Construct the query string dynamically for fetching OC names
+            oc_dict = {}
+            try:
+                # Step 1: Get all the table names from the TEMPLATE table
+                rows = await self.bot.pool.fetch('SELECT template_name FROM Templates')
+                table_names = [row['template_name'] for row in rows]
+
+                # Step 2: For each table name, fetch the OC names for the selected artist_id
+                for table_name in table_names:
+                    query = f'SELECT character_name, description FROM {table_name} WHERE user_id = $1'
+                    result = await self.bot.pool.fetch(query, artist_id)
+                    # Store the results in the dictionary, keyed by the template name
+                    oc_dict[table_name] = [(row['character_name'], row['description']) for row in result]
+
+                # Step 3: Flatten the dictionary into a list of OCs
+                if oc_dict:
+                    oc_names = []
+                    for template_name, ocs in oc_dict.items():
+                        oc_names.extend([oc[0] for oc in ocs])
+
+                        # Randomly select an OC from the list
+                        random_oc_name = random.choice(oc_names)
+
+                    # Find the template and description for the selected OC
+                    for template_name, ocs in oc_dict.items():
+                        for oc_name, description in ocs:
+                            if oc_name == random_oc_name:
+                                # Send the OC details (name, description, template name)
+                                embed = discord.Embed(
+                                    title=f"OC Information: {random_oc_name}",
+                                    description=f"**Template:** {template_name}",
+                                    color=discord.Colour.blue()
+                                )
+                                await ctx.send(embed=embed)
+                                break
+                else:
+                    await ctx.send("No OC names found for the selected artist.")
+            except Exception as e:
+                await ctx.send(f"An error occurred: {str(e)}")
+
+
+
 
 
 
