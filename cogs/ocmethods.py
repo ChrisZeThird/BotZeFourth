@@ -394,6 +394,9 @@ class OcManager(commands.Cog):
 
                     # TODO Build embed depending on oc selected and template
                     embed_list = []
+                    # Attach OC picture to the embed
+                    oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
+
                     for page in range(len(categories_pages)):
                         embed = create_embed(
                             categories=categories_pages[page],
@@ -401,14 +404,15 @@ class OcManager(commands.Cog):
                             color=color
                         )
 
-                        if picture_url:
-                            # Create a discord.File object from the image data
-                            file = discord.File(BytesIO(picture_url), filename='oc_picture.png')
-                            embed.set_thumbnail(url=f"attachment://{file.filename}")
+                        # Add artist pfp as thumbnail
+                        artist = ctx.bot.get_user(int(artist_id))
+                        avatar_url = artist.avatar
+                        embed.set_thumbnail(url=avatar_url)  # Artist avatar
 
                         embed_list.append(embed)
+                        embed.set_image(url=f"attachment://{oc_picture_file.filename}")
 
-                    await PaginatedOCView().start(ctx=ctx, pages=embed_list)
+                    await PaginatedOCView().start(ctx=ctx, pages=embed_list, file=oc_picture_file)
 
                 else:
                     await ctx.send(f"No OC names found for artist {self.bot.get_user(int(artist_id))}.")
