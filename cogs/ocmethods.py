@@ -325,16 +325,17 @@ class OcManager(commands.Cog):
                             embed_list = []
                             # Attach OC picture to the embed
                             oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
-
+                            artist = ctx.bot.get_user(int(user_id))
+                            artist_name = artist.name
                             for page in range(len(categories_pages)):
                                 embed = create_embed(
                                     categories=categories_pages[page],
                                     values=values_pages[page],
-                                    color=color
+                                    color=color,
+                                    artist_name=artist_name
                                 )
 
                                 # Add artist pfp as thumbnail
-                                artist = ctx.bot.get_user(user_id)
                                 avatar_url = artist.avatar
                                 embed.set_thumbnail(url=avatar_url)  # Artist avatar
                                 embed.set_image(url=f"attachment://{oc_picture_file.filename}")
@@ -494,16 +495,17 @@ class OcManager(commands.Cog):
                     embed_list = []
                     # Attach OC picture to the embed
                     oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
-
+                    artist = ctx.bot.get_user(int(artist_id))
+                    artist_name = artist.name
                     for page in range(len(categories_pages)):
                         embed = create_embed(
                             categories=categories_pages[page],
                             values=values_pages[page],
-                            color=color
+                            color=color,
+                            artist_name=artist_name
                         )
 
                         # Add artist pfp as thumbnail
-                        artist = ctx.bot.get_user(int(artist_id))
                         avatar_url = artist.avatar
                         embed.set_thumbnail(url=avatar_url)  # Artist avatar
                         embed.set_image(url=f"attachment://{oc_picture_file.filename}")
@@ -566,16 +568,17 @@ class OcManager(commands.Cog):
                 embed_list = []
                 # Attach OC picture to the embed
                 oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
-
+                artist = ctx.bot.get_user(int(artist_id))
+                artist_name = artist.name
                 for page in range(len(categories_pages)):
                     embed = create_embed(
                         categories=categories_pages[page],
                         values=values_pages[page],
-                        color=color
+                        color=color,
+                        artist_name=artist_name
                     )
 
                     # Add artist pfp as thumbnail
-                    artist = ctx.bot.get_user(int(artist_id))
                     avatar_url = artist.avatar
                     embed.set_thumbnail(url=avatar_url)  # Artist avatar
                     embed.set_image(url=f"attachment://{oc_picture_file.filename}")
