@@ -346,27 +346,33 @@ class OcManager(commands.Cog):
                             await Pagination.wait()
                             modified_fields = Pagination.modified_fields
 
-                            # Apply invert_format_string to each key
-                            formatted_keys_dict = {format_string(key, char1=' ', char2='_'): value for key, value in
-                                                  modified_fields.items()}
+                            if modified_fields:
+                                # Apply invert_format_string to each key
+                                formatted_keys_dict = {format_string(key, char1=' ', char2='_'): value for key, value in
+                                                      modified_fields.items()}
 
-                            # Fetch the template's column names and values to store
-                            columns = list(formatted_keys_dict.keys())
-                            values = list(formatted_keys_dict.values())
-                            # Create the SET clause dynamically (e.g., 'column1 = ?, column2 = ?')
-                            set_clause = ', '.join([f"{col} = ?" for col in columns])
-                            # Add 'user_id' and 'character_name' values at the end of the list for the WHERE clause
-                            values.append(user_id)
-                            values.append(oc_name)
-                            # Construct the SQL UPDATE query
-                            query = f"""
-                                UPDATE {table_name}
-                                SET {set_clause}
-                                WHERE user_id = ? AND character_name = ?
-                            """
-                            # Execute the query
-                            print(await self.bot.pool.execute(query, *values))
-                            await ctx.send(f'Character successfully modified for <@{user_id}>!')
+                                # Fetch the template's column names and values to store
+                                columns = list(formatted_keys_dict.keys())
+                                values = list(formatted_keys_dict.values())
+                                # Create the SET clause dynamically (e.g., 'column1 = ?, column2 = ?')
+                                set_clause = ', '.join([f"{col} = ?" for col in columns])
+                                # Add 'user_id' and 'character_name' values at the end of the list for the WHERE clause
+                                values.append(user_id)
+                                values.append(oc_name)
+                                # Construct the SQL UPDATE query
+                                query = f"""
+                                    UPDATE {table_name}
+                                    SET {set_clause}
+                                    WHERE user_id = ? AND character_name = ?
+                                """
+                                # Execute the query
+                                print(await self.bot.pool.execute(query, *values))
+                                await ctx.send(f'Character successfully modified for <@{user_id}>!')
+
+                            else:
+                                # If the user takes too long to select
+                                await ctx.send("You took too long to make a selection. Please try again.")
+                                return
 
                 except Exception as e:
                     await ctx.send(f"An error occurred: {str(e)}")
