@@ -7,6 +7,18 @@ from discord.ext import commands
 from io import BytesIO
 from typing import Callable, Optional
 
+from utils.form import DynamicFormModal
+
+
+def embed_field_to_list(embed):
+    # Create text input fields based on embed fields
+    fields = []
+    placeholders = []
+    for field in embed.fields:
+            fields.append(field.name)
+            placeholders.append(field.value)
+    return fields, placeholders
+
 
 def create_embed(categories: list, values: list, color: str) -> discord.Embed:
     """
@@ -45,12 +57,14 @@ class PaginatedOCView(View):
                  timeout: int = 60,
                  PreviousButton: discord.ui.Button = discord.ui.Button(emoji=discord.PartialEmoji(name="\U000025c0")),
                  NextButton: discord.ui.Button = discord.ui.Button(emoji=discord.PartialEmoji(name="\U000025b6")),
+                 ConfirmButton: discord.ui.Button = None,  # New confirm button
                  PageCounterStyle: discord.ButtonStyle = discord.ButtonStyle.grey,
                  InitialPage: int = 0, AllowExtInput: bool = False,
                  ephemeral: bool = False) -> None:
         # Init values
         self.PreviousButton = PreviousButton
         self.NextButton = NextButton
+        self.ConfirmButton = ConfirmButton
         self.PageCounterStyle = PageCounterStyle
         self.InitialPage = InitialPage
         self.AllowExtInput = AllowExtInput
@@ -85,6 +99,9 @@ class PaginatedOCView(View):
         self.add_item(self.PreviousButton)
         self.add_item(self.page_counter)
         self.add_item(self.NextButton)
+        if self.ConfirmButton is not None:
+            self.ConfirmButton.callback = self.confirm_button_callback  # New callback
+            self.add_item(self.ConfirmButton)  # Add Confirm button to view
 
         self.message = await ctx.send(file=file, embed=self.pages[self.InitialPage], view=self, ephemeral=self.ephemeral)
 
@@ -121,6 +138,18 @@ class PaginatedOCView(View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await self.previous()
         await interaction.response.defer()
+
+    async def confirm_button_callback(self, interaction: discord.Interaction):
+        embed = self.pages[self.current_page]
+        fields, placeholders = embed_field_to_list(embed)
+        modal = DynamicFormModal(title='Modify OC',
+                                 fields=fields,
+                                 template_name='selected template',
+                                 placeholders=placeholders,
+                                 required=False)
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+        await interaction.followup.send(modal.user_inputs)
 
 
 class SimplePaginatorPageCounter(discord.ui.Button):

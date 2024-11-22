@@ -16,24 +16,38 @@ class OCModal(discord.ui.Modal):
 
 
 class DynamicFormModal(ui.Modal, title='Placeholder'):
-    def __init__(self, title: str, fields: List[str], template_name: str):
+    def __init__(self, title: str, fields: List[str], template_name: str, placeholders=None, required=True):
         super().__init__(title=title)
         self.template_name = template_name
         self.user_inputs = {}
+        self.placeholders = placeholders
+        self.required = required
 
         # Dynamically add fields to the modal
-        for field in fields:
-            self.add_item(
-                ui.TextInput(
-                    label=field,
-                    placeholder=f"Enter {field}"
+        if placeholders is None:
+            for field in fields:
+                self.add_item(
+                    ui.TextInput(
+                        label=field,
+                        placeholder=f"Enter {field}",
+                        required=required
+                    )
                 )
-            )
+        else:
+            for field, placeholder in zip(fields, placeholders):
+                self.add_item(
+                    ui.TextInput(
+                        label=field,
+                        placeholder=placeholder,
+                        required=required
+                    )
+                )
 
     async def on_submit(self, interaction: Interaction):
         # Collect and store user input for each field
         for item in self.children:
-            self.user_inputs[item.label] = item.value
+            # Use item.value if it's not empty; otherwise, use item.placeholder
+            self.user_inputs[item.label] = item.value if item.value else item.placeholder
 
         formatted_output = f"Form for template `{self.template_name}` submitted! Data: : " + "; ".join(
             [f"`{key}`: {value}" for key, value in self.user_inputs.items()]

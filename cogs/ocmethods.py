@@ -219,53 +219,81 @@ class OcManager(commands.Cog):
     @commands.hybrid_command(name='ocmodify', with_app_command=True)
     async def ocmodify(self, ctx: CustomContext):
         """ Modify OC in the database with respect to user and guild id """
-        """ Delete an oc from the database """
         # Get guild and user role
         guild_id = str(ctx.guild.id)
-        user_roles = extract_role_ids(ctx.author.roles)  # Helper function to get role IDs
-        user_id = ctx.author.id
+        user_roles = extract_role_ids(ctx.message.author.roles)
+        user_id = ctx.message.author.id
 
-        # Load roles from JSON (assume `open_json()` loads `roles.json`)
         self.roles_dict = open_json()
 
         try:
             # Check if permissions have been set for the server
             roles_list = self.roles_dict[guild_id]
-            # Verify if the user is allowed to access the database
-            if not any(str(role) in roles_list for role in user_roles):
-                await ctx.send("You do not have permission to access the database.")
-                return
+            # Check is user is allowed to use the database
+            if any(str(role) in roles_list for role in user_roles):
 
-            matching_ids = await self.find_matching_id(guild_id)
+                # Construct the query string dynamically
+                oc_dict_name = {}
+                try:
+                    # Get all the table names from the TEMPLATE table
+                    template_name = await self.selectTemplate()
 
-            if str(user_id) not in matching_ids:
-                await ctx.send("You have no characters registered in the database.")
-                return
+                    # For each table name, fetch the OC names for the given artist_id
+                    for table_name in template_name:
+                        query = f'SELECT character_name FROM {table_name} WHERE user_id = $1'
+                        result = await self.bot.pool.fetch(query, str(user_id))
+                        # Store the results in the dictionary, keyed by the template name
+                        oc_dict_name[table_name] = [row['character_name'] for row in result]
 
-            template_name = await self.selectTemplate()
-            # Fetch all OCs for the user across all templates
-            all_ocs = []
-            for table in template_name:
-                ocs = await self.bot.pool.fetch(
-                    f'SELECT character_name FROM {table} WHERE user_id = $1 AND guild_id = $2',
-                    str(user_id), guild_id)
-                all_ocs.extend([row['character_name'] for row in ocs])
+                    if bool(oc_dict_name):  # Empty dictionaries evaluate to False in Python
+                        # Send the list of matching oc for given user_id
+                        oc_names = concatenate_dict_values(oc_dict_name)  # just need the list of names for this step
+                        oc_selector = MyView(labels=oc_names, values=oc_names, bot=self.bot, use_modal=False)
+                        await ctx.send(content='**Select the character**', view=oc_selector)
+                        await oc_selector.wait()  # continues after stop() or timeout
 
-            if not all_ocs:
-                await ctx.send("You have no OCs in the database to modify.")
-                return
-            # Display dropdown to select OC
-            oc_modify = MyView(labels=all_ocs, values=all_ocs, bot=self.bot, use_modal=False)
-            await ctx.send(content="**Select the OC to modify**:", view=oc_modify)
-            await oc_modify.wait()  # Wait for the user to make a selection
+                        oc_name = oc_selector.value
+                        # Fetch information of selected OC
+                        table_name = get_key_by_value(value=oc_name, dictionary=oc_dict_name)
+                        query_oc_dict = await fetch_oc_information(bot=self.bot, table_name=table_name,
+                                                                   character_name=oc_name, user_id=str(user_id))
 
-            if oc_modify.value:
-                selected_oc = oc_modify.value
-                # TODO Modal logic implementation
-                await ctx.send('This is a placeholder. Command has not been rewrote yet')
+                        # Get keys and values from the oc dictionary
+                        oc_dict = query_oc_dict.copy()
+                        # Get color and picture first
+                        color = oc_dict['color']
+                        picture_url = oc_dict['picture_url']
+                        for e in ['character_id', 'user_id', 'guild_id', 'color', 'picture_url']:
+                            oc_dict.pop(e)
+                        categories = [format_string(key) for key in list(oc_dict.keys())]
+                        categories_pages = [categories[i:i + 5] for i in range(0, len(categories), 5)]
+                        values_pages = [list(oc_dict.values())[i:i + 5] for i in range(0, len(categories), 5)]
+
+                        embed_list = []
+                        # Attach OC picture to the embed
+                        oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
+
+                        for page in range(len(categories_pages)):
+                            embed = create_embed(
+                                categories=categories_pages[page],
+                                values=values_pages[page],
+                                color=color
+                            )
+
+                            # Add artist pfp as thumbnail
+                            artist = ctx.bot.get_user(user_id)
+                            avatar_url = artist.avatar
+                            embed.set_thumbnail(url=avatar_url)  # Artist avatar
+                            embed.set_image(url=f"attachment://{oc_picture_file.filename}")
+                            embed_list.append(embed)
+
+                        await PaginatedOCView(ConfirmButton=discord.ui.Button(label="Select", style=discord.ButtonStyle.green)).start(ctx=ctx, pages=embed_list, file=oc_picture_file)
+
+                except Exception as e:
+                    await ctx.send(f"An error occurred: {str(e)}")
 
             else:
-                await ctx.send("You did not select an OC for deletion.")
+                await ctx.send(f"You don't have any OC in the da.")
 
         except KeyError:
             await ctx.send("Roles for this server have not been set. Please use the `addrole` command first.")
@@ -352,10 +380,10 @@ class OcManager(commands.Cog):
             # Construct the query string dynamically
             oc_dict_name = {}
             try:
-                # Step 1: Get all the table names from the TEMPLATE table
+                # Get all the table names from the TEMPLATE table
                 template_name = await self.selectTemplate()
 
-                # Step 2: For each table name, fetch the OC names for the given artist_id
+                # For each table name, fetch the OC names for the given artist_id
                 for table_name in template_name:
                     query = f'SELECT character_name FROM {table_name} WHERE user_id = $1'
                     result = await self.bot.pool.fetch(query, artist_id)
