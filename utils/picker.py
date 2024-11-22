@@ -65,14 +65,18 @@ class ColorPicker(discord.ui.View):
 
 
 class ClassicSelectMenu(discord.ui.Select):
-    def __init__(self, labels, values, bot):
+    def __init__(self, labels, values, bot, placeholder='Select an option...', emojis=None):
         self.bot = bot
         self.labels = labels
         self.data_to_store = None
         options = []
-        for label, value in zip(labels, values):
-            options.append(discord.SelectOption(label=label, value=value))
-        super().__init__(placeholder='Select an option...', min_values=1, max_values=1, options=options)
+        if emojis is None:
+            for label, value in zip(labels, values):
+                options.append(discord.SelectOption(label=label, value=value))
+        else:
+            for label, value, emoji in zip(labels, values, emojis):
+                options.append(discord.SelectOption(label=label, value=value, emoji=emoji))
+        super().__init__(placeholder=placeholder, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         self.view.value = self.values[0]  # Save the selected value for later use
@@ -181,13 +185,13 @@ class MySelectMenu(discord.ui.Select):
 
 
 class MyView(discord.ui.View):
-    def __init__(self, labels, values, bot, use_modal=True):
+    def __init__(self, labels, values, bot, use_modal=True, emojis=None):
         super().__init__()
         self.value = None
         if use_modal:
             self.select_menu = MySelectMenu(labels, values, bot=bot)
         else:
-            self.select_menu = ClassicSelectMenu(labels, values, bot=bot)
+            self.select_menu = ClassicSelectMenu(labels, values, bot=bot, emojis=emojis)
         self.add_item(self.select_menu)
 
     @property

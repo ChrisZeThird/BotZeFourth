@@ -10,7 +10,7 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import PaginatedOCView, create_embed
 from utils.misc import extract_role_ids, open_json, concatenate_dict_values, get_key_by_value, format_string
-from utils.picker import ColorPicker, MyView
+from utils.picker import ColorPicker, MyView, ClassicSelectMenu
 
 
 async def fetch_oc_information(bot, table_name, character_name, user_id):
@@ -263,57 +263,110 @@ class OcManager(commands.Cog):
                         # Get color and picture first
                         color = oc_dict['color']
                         picture_url = oc_dict['picture_url']
-                        for e in ['character_id', 'user_id', 'guild_id', 'color', 'picture_url']:
-                            oc_dict.pop(e)
-                        categories = [format_string(key) for key in list(oc_dict.keys())]
-                        categories_pages = [categories[i:i + 5] for i in range(0, len(categories), 5)]
-                        values_pages = [list(oc_dict.values())[i:i + 5] for i in range(0, len(categories), 5)]
 
-                        embed_list = []
-                        # Attach OC picture to the embed
-                        oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
+                        # Init ClassicSelectMenu labels and values
+                        labels = ["Color", "Picture", "Field"]
+                        values = ["color", "picture", "field"]
+                        emojis = ['🎨', '🖼️', '📝']
 
-                        for page in range(len(categories_pages)):
-                            embed = create_embed(
-                                categories=categories_pages[page],
-                                values=values_pages[page],
-                                color=color
-                            )
+                        modifySelect = MyView(labels=labels, values=values, bot=self.bot, use_modal=False, emojis=emojis)
+                        await ctx.send(content='**What would you like to modify?**', view=modifySelect)
+                        await modifySelect.wait()  # continues after stop() or timeout
 
-                            # Add artist pfp as thumbnail
-                            artist = ctx.bot.get_user(user_id)
-                            avatar_url = artist.avatar
-                            embed.set_thumbnail(url=avatar_url)  # Artist avatar
-                            embed.set_image(url=f"attachment://{oc_picture_file.filename}")
-                            embed_list.append(embed)
+                        selected_option = modifySelect.value
 
-                        Pagination = PaginatedOCView(ConfirmButton=discord.ui.Button(label="Select", style=discord.ButtonStyle.green))
-                        await Pagination.start(ctx=ctx, pages=embed_list, file=oc_picture_file)
-                        await Pagination.wait()
-                        modified_fields = Pagination.modified_fields
+                        if selected_option == 'color':
+                            # Create instance of the ColorPicker DropdownMenu view
+                            color_view = ColorPicker(bot=self.bot)
+                            await ctx.send(content='**Select a color to use**', view=color_view)
+                            await color_view.wait()
+                            new_color = color_view.colour
 
-                        # Apply invert_format_string to each key
-                        formatted_keys_dict = {format_string(key, char1=' ', char2='_'): value for key, value in
-                                              modified_fields.items()}
+                            # Update color in the database
+                            query = f"UPDATE {table_name} SET color = ? WHERE user_id = ? AND character_name = ?"
+                            await self.bot.pool.execute(query, new_color, str(user_id), oc_name)
+                            await ctx.send(f"Color updated to {new_color} successfully!", ephemeral=True)
 
-                        print(formatted_keys_dict)
-                        # Fetch the template's column names and values to store
-                        columns = list(formatted_keys_dict.keys())
-                        values = list(formatted_keys_dict.values())
-                        # Create the SET clause dynamically (e.g., 'column1 = ?, column2 = ?')
-                        set_clause = ', '.join([f"{col} = ?" for col in columns])
-                        # Add 'user_id' and 'character_name' values at the end of the list for the WHERE clause
-                        values.append(user_id)
-                        values.append(oc_name)
-                        # Construct the SQL UPDATE query
-                        query = f"""
-                            UPDATE {table_name}
-                            SET {set_clause}
-                            WHERE user_id = ? AND character_name = ?
-                        """
-                        # Execute the query
-                        print(await self.bot.pool.execute(query, *values))
-                        await ctx.send(f'Character successfully modified for <@{user_id}>!')
+                        elif selected_option == 'picture':
+                            # Requests user to send a new file
+                            def check(m):
+                                return m.author == ctx.author
+
+                            await ctx.send("**Please send a new picture:**")
+                            try:
+                                new_value = await self.bot.wait_for("message", check=check, timeout=30.0)
+
+                                if new_value.attachments and new_value.attachments[0].content_type in ['image/png',
+                                                                                                       'image/jpeg']:
+                                    new_picture = await new_value.attachments[0].read()
+
+                                    # Update color in the database
+                                    query = f"UPDATE {table_name} SET picture_url = ? WHERE user_id = ? AND character_name = ?"
+                                    await self.bot.pool.execute(query, new_picture, str(user_id), oc_name)
+                                    await ctx.send(f'**Saved new picture for {oc_name} !**', ephemeral=True)
+
+                                else:
+                                    # The attachment is not a PNG or JPEG file
+                                    await ctx.send("Please attach a **PNG** or **JPEG** file.")
+
+                            except asyncio.TimeoutError:
+                                await ctx.send("**Timed out. Please try again.**")
+                                return
+
+                        elif selected_option == 'field':
+                            # Uses same logic as `ocinfo` and sends a paginated embed
+                            # User will select the page to modify using a new select button (sends a modal with optional fields)
+                            for e in ['character_id', 'user_id', 'guild_id', 'color', 'picture_url']:
+                                oc_dict.pop(e)
+                            categories = [format_string(key) for key in list(oc_dict.keys())]
+                            categories_pages = [categories[i:i + 5] for i in range(0, len(categories), 5)]
+                            values_pages = [list(oc_dict.values())[i:i + 5] for i in range(0, len(categories), 5)]
+
+                            embed_list = []
+                            # Attach OC picture to the embed
+                            oc_picture_file = discord.File(BytesIO(picture_url), filename="oc_picture.png")
+
+                            for page in range(len(categories_pages)):
+                                embed = create_embed(
+                                    categories=categories_pages[page],
+                                    values=values_pages[page],
+                                    color=color
+                                )
+
+                                # Add artist pfp as thumbnail
+                                artist = ctx.bot.get_user(user_id)
+                                avatar_url = artist.avatar
+                                embed.set_thumbnail(url=avatar_url)  # Artist avatar
+                                embed.set_image(url=f"attachment://{oc_picture_file.filename}")
+                                embed_list.append(embed)
+
+                            Pagination = PaginatedOCView(ConfirmButton=discord.ui.Button(label="Select", style=discord.ButtonStyle.green))
+                            await Pagination.start(ctx=ctx, pages=embed_list, file=oc_picture_file)
+                            await Pagination.wait()
+                            modified_fields = Pagination.modified_fields
+
+                            # Apply invert_format_string to each key
+                            formatted_keys_dict = {format_string(key, char1=' ', char2='_'): value for key, value in
+                                                  modified_fields.items()}
+
+                            print(formatted_keys_dict)
+                            # Fetch the template's column names and values to store
+                            columns = list(formatted_keys_dict.keys())
+                            values = list(formatted_keys_dict.values())
+                            # Create the SET clause dynamically (e.g., 'column1 = ?, column2 = ?')
+                            set_clause = ', '.join([f"{col} = ?" for col in columns])
+                            # Add 'user_id' and 'character_name' values at the end of the list for the WHERE clause
+                            values.append(user_id)
+                            values.append(oc_name)
+                            # Construct the SQL UPDATE query
+                            query = f"""
+                                UPDATE {table_name}
+                                SET {set_clause}
+                                WHERE user_id = ? AND character_name = ?
+                            """
+                            # Execute the query
+                            print(await self.bot.pool.execute(query, *values))
+                            await ctx.send(f'Character successfully modified for <@{user_id}>!')
 
                 except Exception as e:
                     await ctx.send(f"An error occurred: {str(e)}")
