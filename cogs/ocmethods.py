@@ -518,7 +518,7 @@ class OcManager(commands.Cog):
                 await ctx.send(f"An error occurred: {str(e)}")
 
     @commands.hybrid_command(name='ocrandom', with_app_command=True)
-    # @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def ocrandom(self, ctx: CustomContext):
         """ Send the description of a random selected OC """
         """ Sends a random OC from a selected artist """
