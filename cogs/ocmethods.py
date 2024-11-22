@@ -349,7 +349,6 @@ class OcManager(commands.Cog):
                             formatted_keys_dict = {format_string(key, char1=' ', char2='_'): value for key, value in
                                                   modified_fields.items()}
 
-                            print(formatted_keys_dict)
                             # Fetch the template's column names and values to store
                             columns = list(formatted_keys_dict.keys())
                             values = list(formatted_keys_dict.values())
@@ -542,8 +541,7 @@ class OcManager(commands.Cog):
                 # Select a template name, attempt system if the user doesn't have a character in that template table
                 for template in template_names:
                     query = f"SELECT COUNT(*) FROM {template} WHERE user_id = $1"
-                    result = await self.bot.pool.fetch(query, artist_id)  # fetchval returns the count directly
-                    print(result[0]['COUNT(*)'])
+                    result = await self.bot.pool.fetch(query, artist_id)
                     if result[0]['COUNT(*)'] > 0:  # Check if the artist has characters in this template
                         valid_templates.append(template)
 
