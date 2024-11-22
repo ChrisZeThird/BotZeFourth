@@ -20,7 +20,7 @@ def embed_field_to_list(embed):
     return fields, placeholders
 
 
-def create_embed(categories: list, values: list, color: str) -> discord.Embed:
+def create_embed(categories: list, values: list, color: str, artist_name: str) -> discord.Embed:
     """
     Create a Discord embed with categories as field names and values as field values.
 
@@ -28,6 +28,7 @@ def create_embed(categories: list, values: list, color: str) -> discord.Embed:
     :param categories: List of strings for the field names.
     :param values: List of strings for the field values.
     :param color: Hex color code as a string (e.g., "#FF5733").
+    :param artist_name: Name of the artist as a string
 
     Returns:
         discord.Embed: A Discord embed with the specified fields and color.
@@ -44,10 +45,17 @@ def create_embed(categories: list, values: list, color: str) -> discord.Embed:
 
     # Create the embed
     embed = discord.Embed(title='OC Information', color=embed_color)
+    # Set the description if "Description" is in categories
+    if "Description" in categories:
+        index = categories.index("Description")
+        embed.description = values[index]  # Set the description value
+        categories.pop(index)  # Remove "Description" from categories
+        values.pop(index)  # Remove the corresponding value
+    embed.set_footer(text=f"Author: {artist_name}")  # Artist name at the bottom
 
     # Add fields to the embed
     for category, value in zip(categories, values):
-        embed.add_field(name=category, value=value, inline=False)
+        embed.add_field(name=category, value=value, inline=True)
 
     return embed
 
