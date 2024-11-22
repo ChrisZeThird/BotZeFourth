@@ -64,7 +64,10 @@ class PaginatedOCView(View):
         # Init values
         self.PreviousButton = PreviousButton
         self.NextButton = NextButton
+        # Related to `ocmodify`
         self.ConfirmButton = ConfirmButton
+        self.modified_fields = None
+        # Page counters and properties
         self.PageCounterStyle = PageCounterStyle
         self.InitialPage = InitialPage
         self.AllowExtInput = AllowExtInput
@@ -149,7 +152,9 @@ class PaginatedOCView(View):
                                  required=False)
         await interaction.response.send_modal(modal)
         await modal.wait()
-        await interaction.followup.send(modal.user_inputs)
+        self.modified_fields = modal.user_inputs
+        # await interaction.followup.send(self.modified_fields)
+        self.stop()
 
 
 class SimplePaginatorPageCounter(discord.ui.Button):

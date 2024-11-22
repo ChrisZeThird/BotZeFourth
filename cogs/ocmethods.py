@@ -287,7 +287,33 @@ class OcManager(commands.Cog):
                             embed.set_image(url=f"attachment://{oc_picture_file.filename}")
                             embed_list.append(embed)
 
-                        await PaginatedOCView(ConfirmButton=discord.ui.Button(label="Select", style=discord.ButtonStyle.green)).start(ctx=ctx, pages=embed_list, file=oc_picture_file)
+                        Pagination = PaginatedOCView(ConfirmButton=discord.ui.Button(label="Select", style=discord.ButtonStyle.green))
+                        await Pagination.start(ctx=ctx, pages=embed_list, file=oc_picture_file)
+                        await Pagination.wait()
+                        modified_fields = Pagination.modified_fields
+
+                        # Apply invert_format_string to each key
+                        formatted_keys_dict = {format_string(key, char1=' ', char2='_'): value for key, value in
+                                              modified_fields.items()}
+
+                        print(formatted_keys_dict)
+                        # Fetch the template's column names and values to store
+                        columns = list(formatted_keys_dict.keys())
+                        values = list(formatted_keys_dict.values())
+                        # Create the SET clause dynamically (e.g., 'column1 = ?, column2 = ?')
+                        set_clause = ', '.join([f"{col} = ?" for col in columns])
+                        # Add 'user_id' and 'character_name' values at the end of the list for the WHERE clause
+                        values.append(user_id)
+                        values.append(oc_name)
+                        # Construct the SQL UPDATE query
+                        query = f"""
+                            UPDATE {table_name}
+                            SET {set_clause}
+                            WHERE user_id = ? AND character_name = ?
+                        """
+                        # Execute the query
+                        print(await self.bot.pool.execute(query, *values))
+                        await ctx.send(f'Character successfully modified for <@{user_id}>!')
 
                 except Exception as e:
                     await ctx.send(f"An error occurred: {str(e)}")

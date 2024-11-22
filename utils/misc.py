@@ -29,18 +29,22 @@ def add_spaces_to_capital_letters(input_string):
     return output_string.strip()
 
 
-def format_string(input_string):
+def format_string(input_string, char1='_', char2=' ', capital=True):
     """
-    Formats a string by replacing underscores with spaces
-    and capitalizing the first letter.
+    Formats a string by replacing char1 by char 2. By default, add capital letter, otherwise return lowercase string.
 
-    Args:
-        input_string (str): The string to format.
+    :param input_string: The string to format.
+    :param char1: '_' by default
+    :param char2: ' ' by default
+    :param capital: bool, True by default
 
     Returns:
         str: The formatted string.
     """
-    formatted = input_string.replace('_', ' ').capitalize()
+    if capital:
+        formatted = input_string.replace(char1, char2).capitalize()
+    else:
+        formatted = input_string.replace(char1, char2).lower()
     return formatted
 
 
