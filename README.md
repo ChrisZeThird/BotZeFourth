@@ -1,15 +1,14 @@
 *DISCLAIMER: This README file isn't up to date with the current Bot version. It concerns the `legacy` branch only.*
 
 # About the project
-I started developing this bot a year ago, after talking with my girlfriend about how you could share characters 
-description as an artist on discord. This was the opportunity to (re) discover *SQL* database, and *discord.py*. I put 
-this project on hold due to exam and lack the enthusiasm to continue (I also lost the project). Now I feel more 
-confident tackling this project, especially thanks to *GitHub* and *Pycharm*.
+BotZeFourth is a powerful and versatile Discord bot designed specifically for artists to streamline the management and organization of their artwork and character information.
 
-Artists can create information cards about their characters, and users on discord just have to run a command to read the 
-card. For now, there are basic functionalities. I'm actively looking for feedbacks!
+Key features include:
 
-***The bot is currently not in public mode, so only I can add it to a server, if you want to test it out, send me a direct message on discord or by email at chriszethird.contact@gmail.com***
+- **Automated Thread Creation**: When artists post artwork in designated channels, the bot automatically creates threads for each piece, ensuring discussions can take place without cluttering the main chat.
+- **Custom Information Cards**: Artists can easily create, modify, or delete detailed information cards, presented in an embedded format. These cards help keep communities informed about the artist’s creations and characters. The bot offers various templates for character information, including basic details and more complex options like D&D-style character sheets.
+
+For more information, you send me a direct message on discord or by email at *chriszethird.contact@gmail.com*
 
 # Quick set-up
 Start by inviting the bot to your server using this
