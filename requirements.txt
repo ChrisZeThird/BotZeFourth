@@ -1,4 +1,5 @@
 aiosqlite
+aiofiles
 discord.py
 humanize
 psutil

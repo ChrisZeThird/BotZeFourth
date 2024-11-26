@@ -10,7 +10,7 @@ from utils.data import DiscordBot
 from utils.default import CustomContext
 from utils.embed import PaginatedOCView, create_embed
 from utils.misc import extract_role_ids, open_json, concatenate_dict_values, get_key_by_value, format_string
-from utils.picker import ColorPicker, MyView, ClassicSelectMenu
+from utils.picker import ColorPicker, MyView
 
 
 async def fetch_oc_information(bot, table_name, character_name, user_id):
@@ -332,7 +332,7 @@ class OcManager(commands.Cog):
                                     categories=categories_pages[page],
                                     values=values_pages[page],
                                     color=color,
-                                    artist_name=artist_name
+                                    footer=artist_name
                                 )
 
                                 # Add artist pfp as thumbnail
@@ -508,7 +508,7 @@ class OcManager(commands.Cog):
                             categories=categories_pages[page],
                             values=values_pages[page],
                             color=color,
-                            artist_name=artist_name
+                            footer=artist_name
                         )
 
                         # Add artist pfp as thumbnail
@@ -581,7 +581,7 @@ class OcManager(commands.Cog):
                         categories=categories_pages[page],
                         values=values_pages[page],
                         color=color,
-                        artist_name=artist_name
+                        footer=artist_name
                     )
 
                     # Add artist pfp as thumbnail

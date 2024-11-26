@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import json
 import os
@@ -7,34 +8,24 @@ from utils import permissions
 from utils.default import CustomContext
 from discord.ext import commands
 from utils.data import DiscordBot
-from utils.misc import open_json
+from utils.misc import open_json, save_dict
+from utils.picker import MyView
+
+
+# Function to generate an embed listing the roles or channels
+def listing_embed(title, items):
+    embed = discord.Embed(title=title)
+    if not items:
+        embed.add_field(name="No items", value="There are no roles/channels to display.", inline=False)
+    else:
+        for item in items:
+            embed.add_field(name=item, inline=False)
+    return embed
 
 
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot: DiscordBot = bot
-
-    # @commands.hybrid_command(name='createdatabase', with_app_command=True)
-    # @commands.check(permissions.is_owner)
-    # async def createdatabase(self, ctx: CustomContext):
-    #     """ Create a database for your server. You can either make it 'private' or 'public'."""
-    #     # Get guild id
-    #     guild_name = ctx.guild.name
-    #     guild_id = str(ctx.guild.id)
-    #
-    #     # Connect to sqlite database
-    #     con = sqlite3.connect("database.db")
-    #     cur = con.cursor()
-    #
-    #     # Create database according to guild id
-    #     cur.execute(f"CREATE TABLE guild_{guild_id} (author_name TEXT, author_id INTEGER, oc_name TEXT, oc_age INTEGER, oc_nationality TEXT, oc_gender TEXT, oc_sexuality TEXT, oc_universe TXT, oc_story TEXT, oc_picture, oc_colour)")
-    #     # Commit changes
-    #     con.commit()
-    #     # Close cursor
-    #     con.close()
-    #
-    #     # Confirm database creation in text channel
-    #     await ctx.send(f"Database for {guild_name} (id: {guild_id}) was successfully created")
 
     @commands.hybrid_command(name='serverslist', with_app_command=True)
     @commands.is_owner()
@@ -58,51 +49,66 @@ class Admin(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def addrole(self, ctx: CustomContext, role):
         """ Add roles allowed to use the bot"""
+        # Check if the JSON file exists
         roles_dict = open_json()
+        guild_id = str(ctx.guild.id)
+        if guild_id not in roles_dict:
+            roles_dict[guild_id] = []
 
-        # Get the server ID
-        server_id = str(ctx.guild.id)
-        if server_id not in roles_dict:
-            roles_dict[server_id] = []
+        if role not in roles_dict[guild_id]:
+            try:
+                role_id = int(role)
+                role_object = discord.utils.get(ctx.guild.roles, id=role_id)  # Check if role exists in the guild
 
-        if role not in roles_dict[server_id]:
-            roles_dict[server_id].append(role)
+                if role_object is None:
+                    await ctx.send("❌ **No role found with that ID. Please try again with a valid Role ID.**")
 
-            # Save the data to the JSON file
-            with open('roles.json', 'w') as f:
-                json.dump(roles_dict, f)
+                else:
+                    roles_dict[guild_id].append(role)
+                    await save_dict(file="roles.json", d=roles_dict)
+                    print('test')
+                    await ctx.send(f"✅ Role **{role_object.name}** added successfully!")
 
-            await ctx.send(f"**Following roles are now allowed to use BotZeFourth database system**: <@&{role}>")
+            except ValueError:
+                await ctx.send("❌ **Invalid role ID. Please provide a valid number.**")
+                return
 
         else:
-            await ctx.send('**Role already allowed to use BotZeFourth database system.**')
+            await ctx.send('**⚠️ Role already allowed to use BotZeFourth database system.**')
 
     @commands.hybrid_command(name='removerole', with_app_command=True)
     @commands.has_permissions(manage_roles=True)
-    async def removerole(self, ctx: CustomContext, roles):
+    async def removerole(self, ctx: CustomContext):
         """ Remove roles allowed to use the bot"""
         # Check if the JSON file exists
-        if not os.path.exists('roles.json'):
-            await ctx.send("File to store authorized roles missing.")
-            return
+        roles_dict = open_json()
 
-        # Load the data from the JSON file
-        with open('roles.json', 'r') as f:
-            roles_dict = json.load(f)
+        # Get server ID
+        guild_id = str(ctx.guild.id)
 
-        # Get the server ID
-        server_id = str(ctx.guild.id)
-        if server_id not in roles_dict:
-            await ctx.send("No roles have been added yet.")
-            return
+        if guild_id in roles_dict:
+            # Generate and send embed listing all channels
+            roles_list = roles_dict.get(guild_id, [])
 
-        # Save the data to the JSON file
-        with open('roles.json', 'w') as f:
-            json.dump(roles_dict, f)
+            if len(roles_list) > 0:
+                roles_names = [discord.utils.get(ctx.guild.roles, id=int(role_id)).name for role_id in roles_list]
 
-        await ctx.send(
-            f"**Following roles have been removed from the list of roles allowed to use BotZeFourth database system**: "
-            f"{', '.join(f'<@&{role}>' for role in roles)}")
+                # Send the list of roles setup
+                roles_selector = MyView(labels=roles_names, values=roles_list, bot=self.bot, use_modal=False)
+                await ctx.send(content='**Select the role to remove**', view=roles_selector)
+                await roles_selector.wait()  # continues after stop() or timeout
+
+                role = roles_selector.value
+                roles_dict[guild_id].remove(role)
+
+                await save_dict(file="roles.json", d=roles_dict)
+                await ctx.send(f"✅ Role successfully removed!")
+
+            else:
+                await ctx.send("⚠️ No role was found for your server. Please add one first.")
+
+        else:
+            await ctx.send("**⚠️ Please first add role before trying to remove any.**")
 
     @commands.hybrid_command(name='addchannel', with_app_command=True)
     @commands.has_permissions(manage_channels=True)
@@ -111,26 +117,67 @@ class Admin(commands.Cog):
         channels_dict = open_json(path='channels.json')
 
         # Get the server ID
-        server_id = str(ctx.guild.id)
+        guild_id = str(ctx.guild.id)
         # Get channel object to ensure user input an actual channel
         channel = self.bot.get_channel(int(channel_id))
 
+        if guild_id not in channels_dict:
+            channels_dict[guild_id] = []
+
         if channel:
             # Make sure the dictionary is set up before adding a channel
-            if server_id not in channels_dict:
-                channels_dict[server_id] = []
+            if guild_id not in channels_dict:
+                channels_dict[guild_id] = []
 
-            if channel_id not in channels_dict[server_id]:
-                channels_dict[server_id].append(channel_id)
-
-                # Save the data to the JSON file
-                with open('channels.json', 'w') as f:
-                    json.dump(channels_dict, f)
-
-                await ctx.send(f"Channel {channel.mention} has been added.")
+            if channel_id not in channels_dict[guild_id]:
+                channels_dict[guild_id].append(channel_id)
+                await save_dict(file="channels.json", d=channels_dict)
+                await ctx.send(f"✅ Channel {channel.mention} has been added.")
 
         else:
-            await ctx.send("Invalid channel ID.")
+            await ctx.send("❌ Invalid channel ID.")
+
+    @commands.hybrid_command(name='removechannel', with_app_command=True)
+    @commands.has_permissions(manage_roles=True)
+    async def removechannel(self, ctx: CustomContext, channel_id):
+        """ Remove roles allowed to use the bot"""
+        # Check if the JSON file exists
+        channels_dict = open_json(path='channels.json')
+
+        # Get the server ID
+        guild_id = str(ctx.guild.id)
+        # Make sure the dictionary is set up before removing a channel
+        if guild_id not in channels_dict:
+            channels_dict[guild_id] = []
+            await ctx.send("⚠️ No channels have been added yet.")
+
+        else:
+            # Generate and send embed listing all channels
+            channels_list = channels_dict.get(guild_id, [])
+
+            if len(channels_list) > 0:
+                channel_names = [ctx.guild.get_channel(int(c)) for c in channels_list]
+
+                # Send the list of channels setup
+                channel_selector = MyView(labels=channel_names, values=channels_list, bot=self.bot, use_modal=False)
+                await ctx.send(content='**Select the channel to remove**', view=channel_selector)
+                await channel_selector.wait()  # continues after stop() or timeout
+
+                channel_id = channels_list.value
+
+                # Get channel object to ensure user input an actual channel
+                channel = self.bot.get_channel(int(channel_id))
+
+                if channel:
+                        channels_dict[guild_id].remove(channel_id)
+                        await save_dict(file="channels.json", d=channels_dict)
+                        await ctx.send(f"✅ Channel {channel.mention} has been deleted.")
+
+                else:
+                    await ctx.send("⚠️ No channel ID was found. Please add one first.")
+
+            else:
+                await ctx.send("⚠️ No channel has been added yet.")
 
     @commands.hybrid_command(name='sendmessage', with_app_command=True)
     @commands.has_permissions(administrator=True)

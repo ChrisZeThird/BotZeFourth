@@ -1,6 +1,7 @@
 import re
 import os
 import json
+import aiofiles
 
 
 def ordinal_suffix(n):
@@ -63,6 +64,11 @@ def open_json(path='roles.json'):
         with open(path, 'r') as f:
             return json.load(f)
     return {}
+
+
+async def save_dict(file, d):
+    async with aiofiles.open(file, "w") as jsonFile:
+        await jsonFile.write(json.dumps(d))  # Write asynchronously
 
 
 def has_link(message):
