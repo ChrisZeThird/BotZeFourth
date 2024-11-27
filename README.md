@@ -19,8 +19,16 @@ features**.
 You will first have to give the bot roles that can use the database system. Otherwise, you won't be able to use any
 command related to OC management. You'll need the `/addrole` command:
 
+![ezgif-7-c6842f338c](https://github.com/user-attachments/assets/99ce5601-eeda-4fe1-ae50-9175cd526bda)
+
+
 Then give the bot channel where 
 artworks are being posted using `/addchannel` command:
+
+
+![ezgif-7-f1e8baa41a](https://github.com/user-attachments/assets/dc428d2d-5448-41a4-a3f4-249d632aacdc)
+
+
 
 This way, you can allow artists to post their creation and immediately create a thread to 
 enable interactions between the author and viewers without cluttering the main channel (any message without an 
