@@ -139,7 +139,7 @@ class Admin(commands.Cog):
 
     @commands.hybrid_command(name='removechannel', with_app_command=True)
     @commands.has_permissions(manage_roles=True)
-    async def removechannel(self, ctx: CustomContext, channel_id):
+    async def removechannel(self, ctx: CustomContext):
         """ Remove roles allowed to use the bot"""
         # Check if the JSON file exists
         channels_dict = open_json(path='channels.json')
