@@ -126,8 +126,6 @@ class Admin(commands.Cog):
 
         if channel:
             # Make sure the dictionary is set up before adding a channel
-            if guild_id not in channels_dict:
-                channels_dict[guild_id] = []
 
             if channel_id not in channels_dict[guild_id]:
                 channels_dict[guild_id].append(channel_id)
@@ -138,7 +136,7 @@ class Admin(commands.Cog):
             await ctx.send("❌ Invalid channel ID.")
 
     @commands.hybrid_command(name='removechannel', with_app_command=True)
-    @commands.has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_channels=True)
     async def removechannel(self, ctx: CustomContext):
         """ Remove roles allowed to use the bot"""
         # Check if the JSON file exists
@@ -152,26 +150,23 @@ class Admin(commands.Cog):
             await ctx.send("⚠️ No channels have been added yet.")
 
         else:
-            # Generate and send embed listing all channels
             channels_list = channels_dict.get(guild_id, [])
 
             if len(channels_list) > 0:
-                channel_names = [ctx.guild.get_channel(int(c)) for c in channels_list]
-
+                channel_names = [ctx.guild.get_channel(int(c)).name for c in channels_list]
                 # Send the list of channels setup
                 channel_selector = MyView(labels=channel_names, values=channels_list, bot=self.bot, use_modal=False)
                 await ctx.send(content='**Select the channel to remove**', view=channel_selector)
                 await channel_selector.wait()  # continues after stop() or timeout
-
-                channel_id = channels_list.value
+                channel_id = channel_selector.value
 
                 # Get channel object to ensure user input an actual channel
                 channel = self.bot.get_channel(int(channel_id))
 
                 if channel:
-                        channels_dict[guild_id].remove(channel_id)
-                        await save_dict(file="channels.json", d=channels_dict)
-                        await ctx.send(f"✅ Channel {channel.mention} has been deleted.")
+                    channels_dict[guild_id].remove(channel_id)
+                    await save_dict(file="channels.json", d=channels_dict)
+                    await ctx.send(f"✅ Channel {channel.mention} has been deleted.")
 
                 else:
                     await ctx.send("⚠️ No channel ID was found. Please add one first.")
